@@ -1,0 +1,9 @@
+# Tell GitHub Linguist the correct languages for this project
+*.py linguist-language=Python
+*.jsx linguist-language=JavaScript
+*.js linguist-language=JavaScript
+*.css linguist-language=CSS
+
+# Exclude generated/vendor files from language stats
+frontend/dist/** linguist-vendored
+frontend/node_modules/** linguist-vendored
