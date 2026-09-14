@@ -257,14 +257,15 @@ export default function Puzzles() {
           <div style={{ ...s.msgBar, background: badgeBg, color: badgeFg }}>
             {loading ? "Loading…" : message}
           </div>
-          <Chessboard options={{
-            position: fen,
-            onSquareClick: onSquareClick,
-            boardWidth: 240,
-            allowDragging: false,
-            squareStyles: optionSquares,
-            boardStyle: { borderRadius: "6px", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" },
-          }} />
+          <div style={{ width: "580px" }}>
+            <Chessboard options={{
+              position: fen,
+              onSquareClick: onSquareClick,
+              allowDragging: false,
+              squareStyles: optionSquares,
+              boardStyle: { borderRadius: "6px", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" },
+            }} />
+          </div>
           <p style={s.hint2}>Click a piece to select it, then click where to move</p>
         </div>
 
@@ -314,10 +315,10 @@ const s = {
   ratingBadge:{ background: "#1e3a5f", padding: "5px 14px", borderRadius: "20px", fontSize: "0.9rem" },
   body:       { display: "flex", gap: "24px", padding: "20px", alignItems: "flex-start", flexWrap: "wrap" },
   left:       { display: "flex", flexDirection: "column", gap: "8px", flexShrink: 0 },
-  meta:       { display: "flex", justifyContent: "space-between", width: "240px", fontSize: "0.75rem" },
+  meta:       { display: "flex", justifyContent: "space-between", width: "580px", fontSize: "0.75rem" },
   metaTheme:  { color: "#94a3b8", textTransform: "capitalize" },
   metaRating: { color: "#e2b96f" },
-  msgBar:     { padding: "8px 12px", borderRadius: "6px", fontWeight: 600, textAlign: "center", fontSize: "0.88rem", width: "240px", boxSizing: "border-box" },
+  msgBar:     { padding: "8px 12px", borderRadius: "6px", fontWeight: 600, textAlign: "center", fontSize: "0.88rem", width: "580px", boxSizing: "border-box" },
   hint2:      { margin: 0, textAlign: "center", fontSize: "0.72rem", color: "#475569" },
   right:      { flex: 1, minWidth: "200px", maxWidth: "260px", display: "flex", flexDirection: "column", gap: "14px" },
   card:       { background: "#16213e", borderRadius: "8px", padding: "14px", display: "flex", flexDirection: "column", gap: "8px" },

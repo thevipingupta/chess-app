@@ -177,14 +177,15 @@ export default function Game() {
             {statusText()}
           </div>
           {error && <div style={s.error}>{error}</div>}
-          <Chessboard options={{
-            position: fen,
-            onSquareClick: onSquareClick,
-            boardWidth: 240,
-            allowDragging: false,
-            squareStyles: optionSquares,
-            boardStyle: { borderRadius: "6px", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" },
-          }} />
+          <div style={{ width: "580px" }}>
+            <Chessboard options={{
+              position: fen,
+              onSquareClick: onSquareClick,
+              allowDragging: false,
+              squareStyles: optionSquares,
+              boardStyle: { borderRadius: "6px", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" },
+            }} />
+          </div>
           <p style={s.hint}>Click a piece to select, then click the destination</p>
         </div>
 
@@ -296,8 +297,8 @@ const s = {
   logoImg:     { width: "26px", height: "26px", objectFit: "contain" },
   outer:       { display: "flex", gap: "24px", padding: "20px", alignItems: "flex-start", flexWrap: "wrap" },
   left:        { display: "flex", flexDirection: "column", gap: "10px", flexShrink: 0 },
-  statusBadge: { padding: "8px 12px", borderRadius: "6px", fontWeight: 700, color: "#1a1a2e", textAlign: "center", fontSize: "0.95rem", width: "240px", boxSizing: "border-box" },
-  error:       { background: "#7f1d1d", color: "#fca5a5", padding: "8px 12px", borderRadius: "6px", fontSize: "0.9rem", width: "240px", boxSizing: "border-box" },
+  statusBadge: { padding: "8px 12px", borderRadius: "6px", fontWeight: 700, color: "#1a1a2e", textAlign: "center", fontSize: "0.95rem", width: "580px", boxSizing: "border-box" },
+  error:       { background: "#7f1d1d", color: "#fca5a5", padding: "8px 12px", borderRadius: "6px", fontSize: "0.9rem", width: "580px", boxSizing: "border-box" },
   hint:        { margin: 0, textAlign: "center", fontSize: "0.72rem", color: "#475569" },
   right:       { flex: 1, minWidth: "220px", maxWidth: "320px", display: "flex", flexDirection: "column", gap: "14px" },
   block:       { display: "flex", flexDirection: "column", gap: "8px" },
