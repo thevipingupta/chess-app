@@ -1,7 +1,24 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Chessboard } from "react-chessboard";
+import { Chess } from "chess.js";
 import api from "../api";
+
+// Build a FEN snapshot array from UCI move list using chess.js
+// fens[0] = starting position, fens[1] = after move 0, etc.
+function buildFens(moves) {
+  const chess = new Chess();
+  const fens  = [chess.fen()];
+  for (const m of moves) {
+    try {
+      chess.move({ from: m.uci.slice(0, 2), to: m.uci.slice(2, 4), promotion: m.uci[4] || undefined });
+    } catch {
+      // If a move fails just keep current position
+    }
+    fens.push(chess.fen());
+  }
+  return fens;
+}
 
 // ── Classification meta ──────────────────────────────────────────────────────
 const CLASS_META = {
@@ -62,20 +79,14 @@ export default function Analyze() {
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState("");
   const [result,    setResult]    = useState(null);   // { headers, moves, final_fen }
+  const [fens,      setFens]      = useState([STARTING_FEN]); // fens[cursor+1]
   const [cursor,    setCursor]    = useState(-1);     // -1 = start position
-  const [boardFen,  setBoardFen]  = useState(STARTING_FEN);
-  const [evalNow,   setEvalNow]   = useState(0);
 
-  // Update board whenever cursor or result changes
+  // Rebuild FEN list whenever a new result arrives
   useEffect(() => {
-    if (!result) { setBoardFen(STARTING_FEN); setEvalNow(0); return; }
-    if (cursor === -1) { setBoardFen(STARTING_FEN); setEvalNow(0); return; }
-    const move = result.moves[cursor];
-    if (move) {
-      setBoardFen(move.fen_after);
-      setEvalNow(move.eval_after ?? 0);
-    }
-  }, [cursor, result]);
+    if (!result) { setFens([STARTING_FEN]); return; }
+    setFens(buildFens(result.moves));
+  }, [result]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -104,9 +115,8 @@ export default function Analyze() {
     setError("");
     setLoading(true);
     setResult(null);
+    setFens([STARTING_FEN]);
     setCursor(-1);
-    setBoardFen(STARTING_FEN);
-    setEvalNow(0);
     try {
       const res = await api.post("/analysis/pgn", { pgn: pgnText });
       setResult(res.data);
@@ -119,6 +129,9 @@ export default function Analyze() {
 
   // ── Derived display values ───────────────────────────────────────────────────
   const currentMove = result?.moves?.[cursor] ?? null;
+  // fens[0] = start, fens[cursor+1] = position after move at cursor
+  const boardFen = fens[cursor + 1] ?? STARTING_FEN;
+  const evalNow  = currentMove?.eval_after ?? 0;
 
   // Summary counts
   const summary = result ? result.moves.reduce((acc, m) => {
