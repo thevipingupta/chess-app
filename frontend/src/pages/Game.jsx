@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import api from "../api";
+import { playMoveSound, playOpponentMoveSound } from "../utils/sounds";
 
 const DIFFICULTIES = [
   { level: 1,  label: "Beginner" },
@@ -82,6 +83,8 @@ export default function Game() {
     setOptionSquares({});
     try {
       const { data } = await api.post(`/game/${gameId}/move`, { move });
+      playMoveSound();
+      if (data.computer_move) playOpponentMoveSound();
       setFen(data.fen);
       setStatus(data.status);
       setGameOver(data.game_over);

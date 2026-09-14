@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import api from "../api";
+import { playMoveSound, playOpponentMoveSound } from "../utils/sounds";
 
 export default function Puzzles() {
   const navigate  = useNavigate();
@@ -101,6 +102,7 @@ export default function Puzzles() {
       return false;
     }
 
+    playMoveSound();
     setFen(chess.fen());
     setSelectedSq(null);
     setOptionSquares({});
@@ -120,6 +122,7 @@ export default function Puzzles() {
     setTimeout(() => {
       try {
         chess.move({ from: oppUCI.slice(0,2), to: oppUCI.slice(2,4), promotion: oppUCI[4] || undefined });
+        playOpponentMoveSound();
         setFen(chess.fen());
         if (idxRef.current >= solRef.current.length) {
           setStatus("correct");
