@@ -9,6 +9,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// On 401 (expired / invalid token) — clear session and redirect to login
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      window.location.href = "/login";
+    }
+    return Promise.reject(err);
+  }
+);
+
 export const authApi = {
   register: (data) => api.post("/auth/register", data),
   login: (username, password) => {

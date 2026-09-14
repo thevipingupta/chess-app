@@ -10,7 +10,7 @@ _ENV_FILE = Path(__file__).parent.parent / ".env"
 class Settings(BaseSettings):
     frontend_origin: str = "http://localhost:5173"
     secret_key: str
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 480   # 8 hours
     database_url: str = "sqlite:///./chess.db"
     stockfish_path: str = "stockfish"
 
