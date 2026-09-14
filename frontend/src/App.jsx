@@ -4,6 +4,7 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Game from "./pages/Game";
 import Puzzles from "./pages/Puzzles";
+import Analyze from "./pages/Analyze";
 
 function RequireAuth({ children }) {
   return localStorage.getItem("token") ? children : <Navigate to="/login" replace />;
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/" element={<RequireAuth><Home /></RequireAuth>} />
         <Route path="/game" element={<RequireAuth><Game /></RequireAuth>} />
         <Route path="/puzzles" element={<RequireAuth><Puzzles /></RequireAuth>} />
+        <Route path="/analyze" element={<RequireAuth><Analyze /></RequireAuth>} />
       </Routes>
     </BrowserRouter>
   );

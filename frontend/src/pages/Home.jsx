@@ -33,6 +33,13 @@ export default function Home() {
           <p style={styles.cardDesc}>Solve tactical puzzles that get harder as your rating climbs.</p>
           <button style={styles.btn}>Solve Puzzles →</button>
         </div>
+
+        <div style={styles.card} onClick={() => navigate("/analyze")}>
+          <div style={styles.cardIcon}>📋</div>
+          <h2 style={styles.cardTitle}>Game Analyzer</h2>
+          <p style={styles.cardDesc}>Upload a PGN and step through every move with Stockfish — spot blunders, mistakes and brilliancies.</p>
+          <button style={styles.btn}>Analyze Game →</button>
+        </div>
       </div>
     </div>
   );
