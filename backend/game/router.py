@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.auth.jwt import get_current_user_id
+from backend.config import settings
 from backend.database import get_db
 from backend.game.engine import analyze_game, apply_moves, board_status, get_computer_move
 from backend.game.schemas import (
