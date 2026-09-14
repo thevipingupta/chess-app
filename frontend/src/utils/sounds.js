@@ -7,16 +7,11 @@ function createCtx() {
   return new (window.AudioContext || window.webkitAudioContext)();
 }
 
-/**
- * Woody "tock" — a short sine tone at ~520 Hz with quick exponential decay,
- * layered with a thin noise transient for the initial attack click.
- */
 function playTock(frequency = 520, gainLevel = 0.35) {
   try {
     const ctx = createCtx();
     const t = ctx.currentTime;
 
-    /* ── Tone body (sine) ── */
     const osc = ctx.createOscillator();
     osc.type = "sine";
     osc.frequency.setValueAtTime(frequency, t);
@@ -31,7 +26,6 @@ function playTock(frequency = 520, gainLevel = 0.35) {
     osc.start(t);
     osc.stop(t + 0.18);
 
-    /* ── Attack transient (noise burst, very short) ── */
     const sampleRate = ctx.sampleRate;
     const bufSize = Math.floor(sampleRate * 0.025);
     const buf = ctx.createBuffer(1, bufSize, sampleRate);
@@ -60,11 +54,35 @@ function playTock(frequency = 520, gainLevel = 0.35) {
 }
 
 /** Your move — warm, mid-range tock. */
-export function playMoveSound() {
-  playTock(500, 0.35);
-}
+export function playMoveSound() { playTock(500, 0.35); }
 
-/** Opponent's move — slightly deeper tock so you can tell them apart. */
-export function playOpponentMoveSound() {
-  playTock(380, 0.28);
+/** Opponent's move — slightly deeper tock. */
+export function playOpponentMoveSound() { playTock(380, 0.28); }
+
+/**
+ * Clock tick — sharp high click, played every second when time < 20s.
+ * Under 10s: slightly louder and higher for urgency.
+ */
+export function playTickSound(urgent = false) {
+  try {
+    const ctx = createCtx();
+    const t = ctx.currentTime;
+    const freq = urgent ? 1400 : 1100;
+    const gain = urgent ? 0.28 : 0.18;
+
+    const osc = ctx.createOscillator();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(freq, t);
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.04);
+  } catch {
+    // Silently fail
+  }
 }

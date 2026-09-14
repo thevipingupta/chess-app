@@ -3,15 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import api from "../api";
-import { playMoveSound, playOpponentMoveSound } from "../utils/sounds";
+import { playMoveSound, playOpponentMoveSound, playTickSound } from "../utils/sounds";
 
 const DIFFICULTIES = [
-  { level: 1,  label: "Beginner",    time: 600 },  // 10 min
-  { level: 5,  label: "Casual",      time: 480 },  // 8 min
-  { level: 10, label: "Intermediate",time: 300 },  // 5 min
-  { level: 15, label: "Advanced",    time: 180 },  // 3 min
-  { level: 20, label: "Grandmaster", time: 120 },  // 2 min
+  { level: 1,  label: "Beginner" },
+  { level: 5,  label: "Casual" },
+  { level: 10, label: "Intermediate" },
+  { level: 15, label: "Advanced" },
+  { level: 20, label: "Grandmaster" },
 ];
+
+// Preset time controls in minutes
+const TIME_PRESETS = [1, 2, 3, 5, 10, 15, 30];
 
 const STATUS_COLOR = {
   ok:        "#4ade80",
@@ -55,37 +58,57 @@ export default function Game() {
   const [optionSquares, setOptionSquares] = useState({});
   const [localChess, setLocalChess]       = useState(null);
 
-  // Take back — allowed once per move
+  // Take back — once per move
   const [takeBackUsed, setTakeBackUsed] = useState(false);
 
-  // Timer
-  const [timeLeft, setTimeLeft]   = useState(null);
-  const gameOverRef = useRef(false);  // stable ref so timer callback doesn't go stale
+  // Time control
+  const [selectedMinutes, setSelectedMinutes] = useState(5);
+  const [customInput, setCustomInput]         = useState("");
+  const [useCustom, setUseCustom]             = useState(false);
+  const [playerTime, setPlayerTime]           = useState(null);
+  const [computerTime, setComputerTime]       = useState(null);
+  const gameOverRef = useRef(false);
 
   // Analysis
   const [analysis, setAnalysis]         = useState(null);
   const [analyzing, setAnalyzing]       = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
-  // ── Timer tick ─────────────────────────────────────────────────────────────
+  // ── Player timer (counts when it's player's turn) ───────────────────────
   useEffect(() => {
-    if (!gameId || gameOver || thinking || timeLeft === null || timeLeft <= 0) return;
-    const t = setTimeout(() => setTimeLeft(s => s - 1), 1000);
+    if (!gameId || gameOver || thinking || playerTime === null || playerTime <= 0) return;
+    if (playerTime <= 20) playTickSound(playerTime <= 10);
+    const t = setTimeout(() => setPlayerTime(s => s - 1), 1000);
     return () => clearTimeout(t);
-  }, [gameId, gameOver, thinking, timeLeft]);
+  }, [gameId, gameOver, thinking, playerTime]);
 
-  // Flag when time runs out
+  // ── Computer timer (counts while computer is thinking) ──────────────────
   useEffect(() => {
-    if (timeLeft === 0 && gameId && !gameOverRef.current) {
+    if (!gameId || gameOver || !thinking || computerTime === null || computerTime <= 0) return;
+    const t = setTimeout(() => setComputerTime(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [gameId, gameOver, thinking, computerTime]);
+
+  // ── Flag when player runs out of time ───────────────────────────────────
+  useEffect(() => {
+    if (playerTime === 0 && gameId && !gameOverRef.current) {
       gameOverRef.current = true;
       api.post(`/game/${gameId}/resign`).catch(() => {});
       setGameOver(true);
       setWinner("black");
       setStatus("flagged");
     }
-  }, [timeLeft, gameId]);
+  }, [playerTime, gameId]);
 
-  // ── Reset helpers ──────────────────────────────────────────────────────────
+  // ── Helpers ─────────────────────────────────────────────────────────────
+  const getTimeSeconds = () => {
+    if (useCustom) {
+      const v = parseInt(customInput, 10);
+      return isNaN(v) || v < 1 ? 300 : v * 60;
+    }
+    return selectedMinutes * 60;
+  };
+
   const resetToIdle = () => {
     gameOverRef.current = false;
     setGameId(null);
@@ -100,7 +123,8 @@ export default function Game() {
     setAnalysis(null);
     setShowAnalysis(false);
     setTakeBackUsed(false);
-    setTimeLeft(null);
+    setPlayerTime(null);
+    setComputerTime(null);
     setError("");
   };
 
@@ -112,7 +136,7 @@ export default function Game() {
     setAnalysis(null);
     setShowAnalysis(false);
     setTakeBackUsed(false);
-    const initialTime = DIFFICULTIES.find(d => d.level === difficulty)?.time ?? 300;
+    const secs = getTimeSeconds();
     try {
       const { data } = await api.post("/game/new", { difficulty });
       setGameId(data.game_id);
@@ -122,13 +146,14 @@ export default function Game() {
       setWinner(null);
       setMoveHistory([]);
       setLocalChess(new Chess(data.fen));
-      setTimeLeft(initialTime);
+      setPlayerTime(secs);
+      setComputerTime(secs);
     } catch (e) {
       setError(e.response?.data?.detail || "Failed to start game");
     }
   };
 
-  // ── Move ───────────────────────────────────────────────────────────────────
+  // ── Move ─────────────────────────────────────────────────────────────────
   const sendMove = useCallback(async (from, to, piece) => {
     if (!gameId || gameOver || thinking) return false;
     let move = from + to;
@@ -159,10 +184,9 @@ export default function Game() {
     }
   }, [gameId, gameOver, thinking]);
 
-  // ── Click-to-move ──────────────────────────────────────────────────────────
+  // ── Click-to-move ────────────────────────────────────────────────────────
   const onSquareClick = useCallback(({ square }) => {
     if (!gameId || gameOver || thinking) return;
-
     if (selectedSq) {
       if (square === selectedSq) { setSelectedSq(null); setOptionSquares({}); return; }
       const piece = localChess?.get(selectedSq);
@@ -173,7 +197,7 @@ export default function Game() {
           setSelectedSq(square);
           const moves = localChess.moves({ square, verbose: true });
           const hl = { [square]: { background: "rgba(255,255,0,0.4)" } };
-          moves.forEach(m => { hl[m.to] = { background: localChess.get(m.to) ? "radial-gradient(circle, rgba(255,0,0,0.5) 70%, transparent 70%)" : "radial-gradient(circle, rgba(0,200,0,0.5) 30%, transparent 30%)", borderRadius: "50%" }; });
+          moves.forEach(m => { hl[m.to] = { background: localChess.get(m.to) ? "radial-gradient(circle,rgba(255,0,0,.5) 70%,transparent 70%)" : "radial-gradient(circle,rgba(0,200,0,.5) 30%,transparent 30%)", borderRadius: "50%" }; });
           setOptionSquares(hl);
           return;
         }
@@ -181,18 +205,17 @@ export default function Game() {
       sendMove(selectedSq, square, pieceCode);
       return;
     }
-
     if (!localChess) return;
     const piece = localChess.get(square);
     if (!piece || piece.color !== "w") return;
     setSelectedSq(square);
     const moves = localChess.moves({ square, verbose: true });
     const hl = { [square]: { background: "rgba(255,255,0,0.4)" } };
-    moves.forEach(m => { hl[m.to] = { background: localChess.get(m.to) ? "radial-gradient(circle, rgba(255,0,0,0.5) 70%, transparent 70%)" : "radial-gradient(circle, rgba(0,200,0,0.5) 30%, transparent 30%)", borderRadius: "50%" }; });
+    moves.forEach(m => { hl[m.to] = { background: localChess.get(m.to) ? "radial-gradient(circle,rgba(255,0,0,.5) 70%,transparent 70%)" : "radial-gradient(circle,rgba(0,200,0,.5) 30%,transparent 30%)", borderRadius: "50%" }; });
     setOptionSquares(hl);
   }, [gameId, gameOver, thinking, selectedSq, localChess, sendMove]);
 
-  // ── Take back ──────────────────────────────────────────────────────────────
+  // ── Take back ────────────────────────────────────────────────────────────
   const takeBack = async () => {
     if (!gameId || thinking) return;
     setThinking(true);
@@ -216,7 +239,7 @@ export default function Game() {
     }
   };
 
-  // ── Resign ─────────────────────────────────────────────────────────────────
+  // ── Resign ───────────────────────────────────────────────────────────────
   const resign = async () => {
     if (!gameId || gameOver || thinking) return;
     if (!window.confirm("Are you sure you want to resign?")) return;
@@ -231,7 +254,7 @@ export default function Game() {
     }
   };
 
-  // ── Draw offer ─────────────────────────────────────────────────────────────
+  // ── Draw offer ───────────────────────────────────────────────────────────
   const offerDraw = async () => {
     if (!gameId || gameOver || thinking) return;
     setThinking(true);
@@ -253,7 +276,7 @@ export default function Game() {
     }
   };
 
-  // ── Analysis ───────────────────────────────────────────────────────────────
+  // ── Analysis ─────────────────────────────────────────────────────────────
   const runAnalysis = async () => {
     if (!gameId || analyzing) return;
     setAnalyzing(true);
@@ -270,12 +293,12 @@ export default function Game() {
     }
   };
 
-  // ── Status text ────────────────────────────────────────────────────────────
+  // ── Status text ──────────────────────────────────────────────────────────
   const statusText = () => {
-    if (!gameId) return "Pick a difficulty and start a game";
+    if (!gameId) return "Pick a difficulty & time, then start";
     if (thinking) return "⏳ Computer is thinking…";
-    if (status === "flagged")  return "⏰ Time's up! Computer wins";
-    if (status === "resigned") return "🏳️ You resigned";
+    if (status === "flagged")   return "⏰ Time's up! Computer wins";
+    if (status === "resigned")  return "🏳️ You resigned";
     if (status === "checkmate") return winner === "white" ? "🏆 You win!" : "💀 Computer wins";
     if (status === "stalemate") return "🤝 Stalemate";
     if (status === "draw")      return "🤝 Draw agreed";
@@ -283,8 +306,9 @@ export default function Game() {
     return "Your turn — click a piece then its destination";
   };
 
-  const timerColor = timeLeft !== null && timeLeft <= 30 ? "#f87171" : "#4ade80";
-  const activeGame = gameId && !gameOver;
+  const activeGame   = gameId && !gameOver;
+  const playerLow    = playerTime !== null && playerTime <= 20;
+  const computerLow  = computerTime !== null && computerTime <= 20;
 
   return (
     <div style={s.page}>
@@ -297,18 +321,27 @@ export default function Game() {
       </div>
 
       <div style={s.outer}>
-        {/* Left: board */}
+        {/* ── Left: board + clocks ── */}
         <div style={s.left}>
           <div style={{ ...s.statusBadge, background: STATUS_COLOR[status] || "#4ade80" }}>
             {statusText()}
           </div>
           {error && <div style={s.error}>{error}</div>}
 
-          {/* Timer */}
-          {timeLeft !== null && (
-            <div style={{ ...s.timer, color: timerColor, borderColor: timerColor }}>
-              ⏱ {fmtTime(timeLeft)}
-              {timeLeft <= 30 && <span style={s.timerWarn}> — hurry!</span>}
+          {/* Clocks — shown once game starts */}
+          {gameId && playerTime !== null && (
+            <div style={s.clockRow}>
+              {/* Computer clock */}
+              <div style={{ ...s.clock, ...(thinking ? s.clockActive : s.clockIdle), ...(computerLow ? s.clockDanger : {}) }}>
+                <span style={s.clockLabel}>♟ Computer</span>
+                <span style={s.clockTime}>{fmtTime(computerTime ?? 0)}</span>
+              </div>
+              {/* Player clock */}
+              <div style={{ ...s.clock, ...(!thinking && !gameOver ? s.clockActive : s.clockIdle), ...(playerLow ? s.clockDanger : {}) }}>
+                <span style={s.clockLabel}>♙ You</span>
+                <span style={s.clockTime}>{fmtTime(playerTime ?? 0)}</span>
+                {playerLow && <span style={s.clockWarn}>⚡ {playerTime}s</span>}
+              </div>
             </div>
           )}
 
@@ -324,8 +357,10 @@ export default function Game() {
           <p style={s.hint}>Click a piece to select, then click the destination</p>
         </div>
 
-        {/* Right: controls */}
+        {/* ── Right: controls ── */}
         <div style={s.right}>
+
+          {/* Difficulty */}
           <div style={s.block}>
             <p style={s.label}>Difficulty</p>
             <div style={s.diffRow}>
@@ -339,41 +374,65 @@ export default function Game() {
             </div>
           </div>
 
+          {/* Time control */}
+          <div style={s.block}>
+            <p style={s.label}>Time per Player</p>
+            <div style={s.timeRow}>
+              {TIME_PRESETS.map(m => (
+                <button key={m}
+                  style={{ ...s.timeBtn, ...(!useCustom && selectedMinutes === m ? s.timeActive : {}) }}
+                  onClick={() => { setSelectedMinutes(m); setUseCustom(false); }}
+                  disabled={activeGame}
+                >{m}m</button>
+              ))}
+              <button
+                style={{ ...s.timeBtn, ...(useCustom ? s.timeActive : {}), minWidth: "52px" }}
+                onClick={() => setUseCustom(true)}
+                disabled={activeGame}
+              >Custom</button>
+            </div>
+            {useCustom && (
+              <div style={s.customRow}>
+                <input
+                  type="number" min="1" max="180"
+                  placeholder="Minutes"
+                  value={customInput}
+                  onChange={e => setCustomInput(e.target.value)}
+                  disabled={activeGame}
+                  style={s.customInput}
+                />
+                <span style={{ color: "#64748b", fontSize: "0.85rem" }}>min each</span>
+              </div>
+            )}
+          </div>
+
           {/* Start / Play Again */}
           {(!gameId || gameOver) && (
-            <button style={s.startBtn} onClick={startGame} disabled={thinking}>
+            <button style={s.startBtn} onClick={startGame}>
               {gameOver ? "▶ Play Again" : "▶ Start Game"}
             </button>
           )}
-          {/* New Game during play → go to idle */}
           {activeGame && (
-            <button style={{ ...s.startBtn, background: "#374151" }}
-              onClick={resetToIdle} disabled={thinking}>
+            <button style={{ ...s.startBtn, background: "#374151" }} onClick={resetToIdle}>
               ↺ New Game
             </button>
           )}
 
-          {/* In-game actions row */}
+          {/* In-game action row: Resign + Draw */}
           {activeGame && (
             <div style={s.actionRow}>
-              <button style={s.resignBtn} onClick={resign} disabled={thinking} title="Resign">
-                🏳️ Resign
-              </button>
-              <button style={s.drawBtn} onClick={offerDraw} disabled={thinking} title="Offer Draw">
-                🤝 Draw
-              </button>
+              <button style={s.resignBtn} onClick={resign} disabled={thinking}>🏳️ Resign</button>
+              <button style={s.drawBtn}   onClick={offerDraw} disabled={thinking}>🤝 Draw</button>
             </div>
           )}
 
           {/* Take back */}
           {activeGame && difficulty <= 10 && moveHistory.length > 0 && !takeBackUsed && (
             <button style={{ ...s.startBtn, background: "#78350f", color: "#fde68a" }}
-              onClick={takeBack} disabled={thinking}>
-              ↩ Take Back
-            </button>
+              onClick={takeBack} disabled={thinking}>↩ Take Back</button>
           )}
 
-          {/* Analyze after game */}
+          {/* Analyze */}
           {gameOver && (
             <button style={{ ...s.startBtn, background: "#1e3a5f", color: "#93c5fd" }}
               onClick={runAnalysis} disabled={analyzing}>
@@ -381,6 +440,7 @@ export default function Game() {
             </button>
           )}
 
+          {/* Move history */}
           {moveHistory.length > 0 && !showAnalysis && (
             <div style={s.block}>
               <p style={s.label}>Move History</p>
@@ -458,8 +518,17 @@ const s = {
   left:        { display: "flex", flexDirection: "column", gap: "10px", flexShrink: 0 },
   statusBadge: { padding: "8px 12px", borderRadius: "6px", fontWeight: 700, color: "#1a1a2e", textAlign: "center", fontSize: "0.95rem", width: "580px", boxSizing: "border-box" },
   error:       { background: "#7f1d1d", color: "#fca5a5", padding: "8px 12px", borderRadius: "6px", fontSize: "0.9rem", width: "580px", boxSizing: "border-box" },
-  timer:       { fontFamily: "monospace", fontSize: "1.5rem", fontWeight: 700, textAlign: "center", padding: "8px 16px", borderRadius: "8px", border: "2px solid", background: "#0d1117", letterSpacing: "0.05em", width: "580px", boxSizing: "border-box" },
-  timerWarn:   { fontSize: "0.85rem", fontWeight: 400, animation: "pulse 1s infinite" },
+
+  // Clocks
+  clockRow:    { display: "flex", gap: "10px", width: "580px" },
+  clock:       { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "10px 14px", borderRadius: "8px", border: "2px solid", transition: "all 0.3s" },
+  clockIdle:   { borderColor: "#1e293b", background: "#0d1117", opacity: 0.6 },
+  clockActive: { borderColor: "#4ade80", background: "#0a1f0a" },
+  clockDanger: { borderColor: "#f87171", background: "#1f0a0a", opacity: 1 },
+  clockLabel:  { fontSize: "0.7rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" },
+  clockTime:   { fontFamily: "monospace", fontSize: "1.6rem", fontWeight: 700, letterSpacing: "0.05em" },
+  clockWarn:   { fontSize: "0.72rem", color: "#f87171", fontWeight: 600, marginTop: "2px" },
+
   hint:        { margin: 0, textAlign: "center", fontSize: "0.72rem", color: "#475569" },
   right:       { flex: 1, minWidth: "220px", maxWidth: "320px", display: "flex", flexDirection: "column", gap: "14px" },
   block:       { display: "flex", flexDirection: "column", gap: "8px" },
@@ -467,6 +536,14 @@ const s = {
   diffRow:     { display: "flex", flexWrap: "wrap", gap: "6px" },
   diffBtn:     { padding: "6px 12px", borderRadius: "6px", border: "1px solid #2a3a5a", background: "#16213e", color: "#94a3b8", cursor: "pointer", fontSize: "0.85rem" },
   diffActive:  { background: "#e2b96f", color: "#1a1a2e", border: "1px solid #e2b96f", fontWeight: 700 },
+
+  // Time picker
+  timeRow:     { display: "flex", flexWrap: "wrap", gap: "6px" },
+  timeBtn:     { padding: "5px 10px", borderRadius: "6px", border: "1px solid #2a3a5a", background: "#16213e", color: "#94a3b8", cursor: "pointer", fontSize: "0.82rem" },
+  timeActive:  { background: "#2563eb", color: "#fff", border: "1px solid #2563eb", fontWeight: 700 },
+  customRow:   { display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" },
+  customInput: { width: "80px", padding: "5px 8px", borderRadius: "6px", border: "1px solid #2a3a5a", background: "#0d1117", color: "#fff", fontSize: "0.9rem", outline: "none" },
+
   startBtn:    { padding: "10px", background: "#e2b96f", color: "#1a1a2e", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "1rem", cursor: "pointer" },
   actionRow:   { display: "flex", gap: "8px" },
   resignBtn:   { flex: 1, padding: "9px", background: "#7f1d1d", color: "#fca5a5", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" },
