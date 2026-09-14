@@ -1,6 +1,7 @@
 """Application settings loaded from environment / .env file."""
 
 from pathlib import Path
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 # Always resolve .env relative to the project root (two levels up from this file)
@@ -15,6 +16,14 @@ class Settings(BaseSettings):
     stockfish_path: str = "stockfish"
 
     model_config = {"env_file": str(_ENV_FILE)}
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalise_postgres_url(cls, v: str) -> str:
+        """Render provides legacy postgres:// prefix; SQLAlchemy requires postgresql://."""
+        if isinstance(v, str) and v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql://", 1)
+        return v
 
 
 settings = Settings()

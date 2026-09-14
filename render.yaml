@@ -1,0 +1,58 @@
+# Render.com Blueprint — chess-app
+# Deploy everything in one click at https://dashboard.render.com/blueprints
+#
+# After first deploy, fill in the two cross-service URLs:
+#   chess-api  -> Settings -> Environment -> FRONTEND_ORIGIN  = https://<chess-app>.onrender.com
+#   chess-app  -> Settings -> Environment -> VITE_API_URL     = https://<chess-api>.onrender.com
+# Then trigger a manual redeploy of both services.
+
+services:
+  # ── Backend — FastAPI ───────────────────────────────────────────────────────
+  - type: web
+    name: chess-api
+    runtime: python
+    buildCommand: bash build.sh
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true            # Render generates a secure random value
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chess-db
+          property: connectionString   # injected automatically from the DB below
+
+      - key: STOCKFISH_PATH
+        value: /usr/games/stockfish    # installed by build.sh via apt
+
+      - key: FRONTEND_ORIGIN
+        sync: false                    # ← set this to your frontend URL after first deploy
+                                       #   e.g. https://chess-app.onrender.com
+
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "480"
+
+  # ── Frontend — React/Vite static site ──────────────────────────────────────
+  - type: web
+    name: chess-app
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        sync: false                    # ← set this to your backend URL after first deploy
+                                       #   e.g. https://chess-api.onrender.com
+
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html       # required for React Router (client-side routing)
+
+# ── PostgreSQL database ─────────────────────────────────────────────────────
+databases:
+  - name: chess-db
+    databaseName: chess
+    user: chess
+    plan: free                         # Render free PostgreSQL (expires after 90 days on free tier)
