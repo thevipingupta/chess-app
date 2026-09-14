@@ -67,7 +67,8 @@ export default function Game() {
   const [useCustom, setUseCustom]             = useState(false);
   const [playerTime, setPlayerTime]           = useState(null);
   const [computerTime, setComputerTime]       = useState(null);
-  const gameOverRef = useRef(false);
+  const gameOverRef      = useRef(false);
+  const thinkingStartRef = useRef(null);   // tracks when computer started thinking
 
   // Analysis
   const [analysis, setAnalysis]         = useState(null);
@@ -82,12 +83,8 @@ export default function Game() {
     return () => clearTimeout(t);
   }, [gameId, gameOver, thinking, playerTime]);
 
-  // ── Computer timer (counts while computer is thinking) ──────────────────
-  useEffect(() => {
-    if (!gameId || gameOver || !thinking || computerTime === null || computerTime <= 0) return;
-    const t = setTimeout(() => setComputerTime(s => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [gameId, gameOver, thinking, computerTime]);
+  // Computer time is deducted after each move using actual elapsed wall-clock time
+  // (minimum 1 second so the clock always moves — Stockfish is too fast otherwise)
 
   // ── Flag when player runs out of time ───────────────────────────────────
   useEffect(() => {
@@ -160,11 +157,17 @@ export default function Game() {
     if (piece === "wP" && to[1] === "8") move += "q";
     if (piece === "bP" && to[1] === "1") move += "q";
     setThinking(true);
+    thinkingStartRef.current = Date.now();
     setError("");
     setSelectedSq(null);
     setOptionSquares({});
     try {
       const { data } = await api.post(`/game/${gameId}/move`, { move });
+      // Deduct actual elapsed time from computer clock (min 1s so it always moves)
+      if (data.computer_move && thinkingStartRef.current) {
+        const elapsed = Math.max(1, Math.round((Date.now() - thinkingStartRef.current) / 1000));
+        setComputerTime(t => t === null ? null : Math.max(0, t - elapsed));
+      }
       playMoveSound();
       if (data.computer_move) playOpponentMoveSound();
       setFen(data.fen);
