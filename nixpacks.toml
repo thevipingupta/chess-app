@@ -1,5 +1,7 @@
 # Railway/Nixpacks build config
-# Installs Stockfish chess engine system package during build
 
 [phases.setup]
 aptPkgs = ["stockfish"]
+
+[phases.install]
+cmds = ["pip install uv && uv sync --no-dev --frozen"]
