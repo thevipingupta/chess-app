@@ -165,6 +165,37 @@ def draw_offer(
         return {"accepted": False, "message": "Computer declines — keep fighting, you might turn it around!"}
 
 
+@router.get("/{game_id}/hint")
+def get_hint(
+    game_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Return Stockfish's best move for the current position as a hint."""
+    session = db.query(GameSession).filter(
+        GameSession.id == game_id, GameSession.user_id == user_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if session.result != "in_progress":
+        raise HTTPException(status_code=400, detail="Game is already over")
+    if session.difficulty > 10:
+        raise HTTPException(status_code=400, detail="Hints not available at this difficulty")
+
+    moves = session.pgn.split() if session.pgn else []
+    board = apply_moves(moves)
+
+    try:
+        with chess.engine.SimpleEngine.popen_uci(settings.stockfish_path) as engine:
+            result = engine.play(board, chess.engine.Limit(time=0.4))
+            if not result.move:
+                raise HTTPException(status_code=400, detail="No hint available")
+            uci = result.move.uci()
+            return {"from": uci[:2], "to": uci[2:4]}
+    except FileNotFoundError:
+        raise HTTPException(status_code=503, detail="Stockfish not available")
+
+
 @router.post("/{game_id}/takeback")
 def takeback(
     game_id: int,

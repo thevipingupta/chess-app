@@ -61,6 +61,10 @@ export default function Game() {
   // Take back — once per move
   const [takeBackUsed, setTakeBackUsed] = useState(false);
 
+  // Hints — max 5 per game, only for difficulty <= 10
+  const [hintsLeft, setHintsLeft]   = useState(5);
+  const [hintSquares, setHintSquares] = useState({});
+
   // Time control
   const [selectedMinutes, setSelectedMinutes] = useState(5);
   const [customInput, setCustomInput]         = useState("");
@@ -120,6 +124,8 @@ export default function Game() {
     setAnalysis(null);
     setShowAnalysis(false);
     setTakeBackUsed(false);
+    setHintsLeft(5);
+    setHintSquares({});
     setPlayerTime(null);
     setComputerTime(null);
     setError("");
@@ -133,6 +139,8 @@ export default function Game() {
     setAnalysis(null);
     setShowAnalysis(false);
     setTakeBackUsed(false);
+    setHintsLeft(5);
+    setHintSquares({});
     const secs = getTimeSeconds();
     try {
       const { data } = await api.post("/game/new", { difficulty });
@@ -177,6 +185,7 @@ export default function Game() {
       if (data.game_over) gameOverRef.current = true;
       setMoveHistory(h => [...h, { player: data.player_move, computer: data.computer_move }]);
       setTakeBackUsed(false);
+      setHintSquares({});
       try { setLocalChess(new Chess(data.fen)); } catch {}
       return true;
     } catch (e) {
@@ -237,6 +246,27 @@ export default function Game() {
       try { setLocalChess(new Chess(data.fen)); } catch {}
     } catch (e) {
       setError(e.response?.data?.detail || "Take back failed");
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  // ── Hint ─────────────────────────────────────────────────────────────────
+  const requestHint = async () => {
+    if (!gameId || gameOver || thinking || hintsLeft <= 0) return;
+    setThinking(true);
+    setError("");
+    setHintSquares({});
+    try {
+      const { data } = await api.get(`/game/${gameId}/hint`);
+      setHintsLeft(h => h - 1);
+      // Highlight: blue "from" square, bright cyan "to" square
+      setHintSquares({
+        [data.from]: { background: "rgba(59,130,246,0.6)" },
+        [data.to]:   { background: "rgba(34,211,238,0.8)", borderRadius: "50%" },
+      });
+    } catch (e) {
+      setError(e.response?.data?.detail || "Hint unavailable");
     } finally {
       setThinking(false);
     }
@@ -353,7 +383,7 @@ export default function Game() {
               position: fen,
               onSquareClick: onSquareClick,
               allowDragging: false,
-              squareStyles: optionSquares,
+              squareStyles: { ...optionSquares, ...hintSquares },
               boardStyle: { borderRadius: "6px", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" },
             }} />
           </div>
@@ -433,6 +463,16 @@ export default function Game() {
           {activeGame && difficulty <= 10 && moveHistory.length > 0 && !takeBackUsed && (
             <button style={{ ...s.startBtn, background: "#78350f", color: "#fde68a" }}
               onClick={takeBack} disabled={thinking}>↩ Take Back</button>
+          )}
+
+          {/* Hint */}
+          {activeGame && difficulty <= 10 && hintsLeft > 0 && (
+            <button style={s.hintBtn} onClick={requestHint} disabled={thinking}>
+              💡 Hint <span style={s.hintCount}>{hintsLeft} left</span>
+            </button>
+          )}
+          {activeGame && difficulty <= 10 && hintsLeft === 0 && (
+            <div style={s.hintExhausted}>💡 No hints left for this game</div>
           )}
 
           {/* Analyze */}
@@ -549,8 +589,11 @@ const s = {
 
   startBtn:    { padding: "10px", background: "#e2b96f", color: "#1a1a2e", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "1rem", cursor: "pointer" },
   actionRow:   { display: "flex", gap: "8px" },
-  resignBtn:   { flex: 1, padding: "9px", background: "#7f1d1d", color: "#fca5a5", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" },
-  drawBtn:     { flex: 1, padding: "9px", background: "#1e3a5f", color: "#93c5fd", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" },
+  resignBtn:    { flex: 1, padding: "9px", background: "#7f1d1d", color: "#fca5a5", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" },
+  drawBtn:      { flex: 1, padding: "9px", background: "#1e3a5f", color: "#93c5fd", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" },
+  hintBtn:      { padding: "9px 14px", background: "#1e3a2f", color: "#34d399", border: "1px solid #34d399", borderRadius: "6px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" },
+  hintCount:    { background: "#34d399", color: "#0a1f15", borderRadius: "10px", padding: "1px 8px", fontSize: "0.75rem", fontWeight: 700 },
+  hintExhausted:{ padding: "8px 12px", background: "#0f172a", color: "#475569", borderRadius: "6px", fontSize: "0.82rem", textAlign: "center" },
   history:     { background: "#0d1e3a", borderRadius: "6px", padding: "10px 12px", maxHeight: "200px", overflowY: "auto" },
   row:         { display: "flex", gap: "8px", padding: "3px 0", fontSize: "0.85rem", fontFamily: "monospace" },
   num:         { color: "#475569", minWidth: "22px" },
