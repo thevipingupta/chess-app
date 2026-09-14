@@ -94,6 +94,7 @@ export default function Game() {
       setGameOver(data.game_over);
       setWinner(data.winner);
       setMoveHistory(h => [...h, { player: data.player_move, computer: data.computer_move }]);
+      setTakeBackUsed(false);   // take back resets after each new move
       try { setLocalChess(new Chess(data.fen)); } catch {}
       return true;
     } catch (e) {
