@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
@@ -6,11 +6,11 @@ import api from "../api";
 import { playMoveSound, playOpponentMoveSound } from "../utils/sounds";
 
 const DIFFICULTIES = [
-  { level: 1,  label: "Beginner" },
-  { level: 5,  label: "Casual" },
-  { level: 10, label: "Intermediate" },
-  { level: 15, label: "Advanced" },
-  { level: 20, label: "Grandmaster" },
+  { level: 1,  label: "Beginner",    time: 600 },  // 10 min
+  { level: 5,  label: "Casual",      time: 480 },  // 8 min
+  { level: 10, label: "Intermediate",time: 300 },  // 5 min
+  { level: 15, label: "Advanced",    time: 180 },  // 3 min
+  { level: 20, label: "Grandmaster", time: 120 },  // 2 min
 ];
 
 const STATUS_COLOR = {
@@ -19,6 +19,8 @@ const STATUS_COLOR = {
   checkmate: "#f87171",
   stalemate: "#94a3b8",
   draw:      "#94a3b8",
+  resigned:  "#f87171",
+  flagged:   "#f87171",
 };
 
 const CLASS_META = {
@@ -29,6 +31,12 @@ const CLASS_META = {
   mistake:     { label: "Mistake",     color: "#fb923c", icon: "?" },
   blunder:     { label: "Blunder",     color: "#f87171", icon: "??" },
 };
+
+function fmtTime(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
 
 export default function Game() {
   const navigate = useNavigate();
@@ -47,15 +55,39 @@ export default function Game() {
   const [optionSquares, setOptionSquares] = useState({});
   const [localChess, setLocalChess]       = useState(null);
 
-  // Take back — allowed once per game
+  // Take back — allowed once per move
   const [takeBackUsed, setTakeBackUsed] = useState(false);
+
+  // Timer
+  const [timeLeft, setTimeLeft]   = useState(null);
+  const gameOverRef = useRef(false);  // stable ref so timer callback doesn't go stale
 
   // Analysis
   const [analysis, setAnalysis]         = useState(null);
   const [analyzing, setAnalyzing]       = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
+  // ── Timer tick ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!gameId || gameOver || thinking || timeLeft === null || timeLeft <= 0) return;
+    const t = setTimeout(() => setTimeLeft(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [gameId, gameOver, thinking, timeLeft]);
+
+  // Flag when time runs out
+  useEffect(() => {
+    if (timeLeft === 0 && gameId && !gameOverRef.current) {
+      gameOverRef.current = true;
+      api.post(`/game/${gameId}/resign`).catch(() => {});
+      setGameOver(true);
+      setWinner("black");
+      setStatus("flagged");
+    }
+  }, [timeLeft, gameId]);
+
+  // ── Reset helpers ──────────────────────────────────────────────────────────
   const resetToIdle = () => {
+    gameOverRef.current = false;
     setGameId(null);
     setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     setStatus("ok");
@@ -68,16 +100,19 @@ export default function Game() {
     setAnalysis(null);
     setShowAnalysis(false);
     setTakeBackUsed(false);
+    setTimeLeft(null);
     setError("");
   };
 
   const startGame = async () => {
+    gameOverRef.current = false;
     setError("");
     setSelectedSq(null);
     setOptionSquares({});
     setAnalysis(null);
     setShowAnalysis(false);
     setTakeBackUsed(false);
+    const initialTime = DIFFICULTIES.find(d => d.level === difficulty)?.time ?? 300;
     try {
       const { data } = await api.post("/game/new", { difficulty });
       setGameId(data.game_id);
@@ -87,11 +122,13 @@ export default function Game() {
       setWinner(null);
       setMoveHistory([]);
       setLocalChess(new Chess(data.fen));
+      setTimeLeft(initialTime);
     } catch (e) {
       setError(e.response?.data?.detail || "Failed to start game");
     }
   };
 
+  // ── Move ───────────────────────────────────────────────────────────────────
   const sendMove = useCallback(async (from, to, piece) => {
     if (!gameId || gameOver || thinking) return false;
     let move = from + to;
@@ -109,8 +146,9 @@ export default function Game() {
       setStatus(data.status);
       setGameOver(data.game_over);
       setWinner(data.winner);
+      if (data.game_over) gameOverRef.current = true;
       setMoveHistory(h => [...h, { player: data.player_move, computer: data.computer_move }]);
-      setTakeBackUsed(false);   // take back resets after each new move
+      setTakeBackUsed(false);
       try { setLocalChess(new Chess(data.fen)); } catch {}
       return true;
     } catch (e) {
@@ -121,17 +159,14 @@ export default function Game() {
     }
   }, [gameId, gameOver, thinking]);
 
-  // Click-to-move — react-chessboard v5 passes { square, piece } object
+  // ── Click-to-move ──────────────────────────────────────────────────────────
   const onSquareClick = useCallback(({ square }) => {
     if (!gameId || gameOver || thinking) return;
 
     if (selectedSq) {
       if (square === selectedSq) { setSelectedSq(null); setOptionSquares({}); return; }
-
       const piece = localChess?.get(selectedSq);
       const pieceCode = piece ? (piece.color === "w" ? "w" : "b") + piece.type.toUpperCase() : null;
-
-      // Re-select if clicking another own white piece
       if (localChess) {
         const target = localChess.get(square);
         if (target && target.color === "w") {
@@ -150,7 +185,6 @@ export default function Game() {
     if (!localChess) return;
     const piece = localChess.get(square);
     if (!piece || piece.color !== "w") return;
-
     setSelectedSq(square);
     const moves = localChess.moves({ square, verbose: true });
     const hl = { [square]: { background: "rgba(255,255,0,0.4)" } };
@@ -158,6 +192,7 @@ export default function Game() {
     setOptionSquares(hl);
   }, [gameId, gameOver, thinking, selectedSq, localChess, sendMove]);
 
+  // ── Take back ──────────────────────────────────────────────────────────────
   const takeBack = async () => {
     if (!gameId || thinking) return;
     setThinking(true);
@@ -167,6 +202,7 @@ export default function Game() {
       setFen(data.fen);
       setStatus("ok");
       setGameOver(false);
+      gameOverRef.current = false;
       setWinner(null);
       setSelectedSq(null);
       setOptionSquares({});
@@ -180,6 +216,44 @@ export default function Game() {
     }
   };
 
+  // ── Resign ─────────────────────────────────────────────────────────────────
+  const resign = async () => {
+    if (!gameId || gameOver || thinking) return;
+    if (!window.confirm("Are you sure you want to resign?")) return;
+    try {
+      await api.post(`/game/${gameId}/resign`);
+      gameOverRef.current = true;
+      setGameOver(true);
+      setWinner("black");
+      setStatus("resigned");
+    } catch (e) {
+      setError(e.response?.data?.detail || "Resign failed");
+    }
+  };
+
+  // ── Draw offer ─────────────────────────────────────────────────────────────
+  const offerDraw = async () => {
+    if (!gameId || gameOver || thinking) return;
+    setThinking(true);
+    setError("");
+    try {
+      const { data } = await api.post(`/game/${gameId}/draw-offer`);
+      if (data.accepted) {
+        gameOverRef.current = true;
+        setGameOver(true);
+        setWinner("draw");
+        setStatus("draw");
+      } else {
+        setError(data.message);
+      }
+    } catch (e) {
+      setError(e.response?.data?.detail || "Draw offer failed");
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  // ── Analysis ───────────────────────────────────────────────────────────────
   const runAnalysis = async () => {
     if (!gameId || analyzing) return;
     setAnalyzing(true);
@@ -196,15 +270,21 @@ export default function Game() {
     }
   };
 
+  // ── Status text ────────────────────────────────────────────────────────────
   const statusText = () => {
     if (!gameId) return "Pick a difficulty and start a game";
     if (thinking) return "⏳ Computer is thinking…";
+    if (status === "flagged")  return "⏰ Time's up! Computer wins";
+    if (status === "resigned") return "🏳️ You resigned";
     if (status === "checkmate") return winner === "white" ? "🏆 You win!" : "💀 Computer wins";
     if (status === "stalemate") return "🤝 Stalemate";
-    if (status === "draw")      return "🤝 Draw";
+    if (status === "draw")      return "🤝 Draw agreed";
     if (status === "check")     return "⚠️ Check!";
     return "Your turn — click a piece then its destination";
   };
+
+  const timerColor = timeLeft !== null && timeLeft <= 30 ? "#f87171" : "#4ade80";
+  const activeGame = gameId && !gameOver;
 
   return (
     <div style={s.page}>
@@ -223,6 +303,15 @@ export default function Game() {
             {statusText()}
           </div>
           {error && <div style={s.error}>{error}</div>}
+
+          {/* Timer */}
+          {timeLeft !== null && (
+            <div style={{ ...s.timer, color: timerColor, borderColor: timerColor }}>
+              ⏱ {fmtTime(timeLeft)}
+              {timeLeft <= 30 && <span style={s.timerWarn}> — hurry!</span>}
+            </div>
+          )}
+
           <div style={{ width: "580px" }}>
             <Chessboard options={{
               position: fen,
@@ -250,27 +339,41 @@ export default function Game() {
             </div>
           </div>
 
-          {/* No game yet or game over → start/play again */}
+          {/* Start / Play Again */}
           {(!gameId || gameOver) && (
             <button style={s.startBtn} onClick={startGame} disabled={thinking}>
               {gameOver ? "▶ Play Again" : "▶ Start Game"}
             </button>
           )}
-          {/* Game in progress → reset to idle so difficulty can be changed */}
-          {gameId && !gameOver && (
+          {/* New Game during play → go to idle */}
+          {activeGame && (
             <button style={{ ...s.startBtn, background: "#374151" }}
               onClick={resetToIdle} disabled={thinking}>
               ↺ New Game
             </button>
           )}
 
-          {gameId && !gameOver && difficulty <= 10 && moveHistory.length > 0 && !takeBackUsed && (
+          {/* In-game actions row */}
+          {activeGame && (
+            <div style={s.actionRow}>
+              <button style={s.resignBtn} onClick={resign} disabled={thinking} title="Resign">
+                🏳️ Resign
+              </button>
+              <button style={s.drawBtn} onClick={offerDraw} disabled={thinking} title="Offer Draw">
+                🤝 Draw
+              </button>
+            </div>
+          )}
+
+          {/* Take back */}
+          {activeGame && difficulty <= 10 && moveHistory.length > 0 && !takeBackUsed && (
             <button style={{ ...s.startBtn, background: "#78350f", color: "#fde68a" }}
               onClick={takeBack} disabled={thinking}>
               ↩ Take Back
             </button>
           )}
 
+          {/* Analyze after game */}
           {gameOver && (
             <button style={{ ...s.startBtn, background: "#1e3a5f", color: "#93c5fd" }}
               onClick={runAnalysis} disabled={analyzing}>
@@ -293,19 +396,16 @@ export default function Game() {
             </div>
           )}
 
-          {/* ── Analysis panel ── */}
+          {/* Analysis panel */}
           {showAnalysis && (
             <div style={s.block}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <p style={s.label}>Game Analysis</p>
                 <button style={s.closeBtn} onClick={() => setShowAnalysis(false)}>✕</button>
               </div>
-
               {analyzing && <p style={s.loading}>Running Stockfish analysis…</p>}
-
               {analysis && (
                 <>
-                  {/* Summary bar */}
                   <div style={s.summary}>
                     <div style={s.accuracyBig}>
                       <span style={s.accuracyNum}>{analysis.summary.accuracy}%</span>
@@ -322,8 +422,6 @@ export default function Game() {
                       ))}
                     </div>
                   </div>
-
-                  {/* Move list */}
                   <div style={s.analysisList}>
                     {analysis.moves.map(m => {
                       const meta = CLASS_META[m.classification];
@@ -334,9 +432,7 @@ export default function Game() {
                           <span style={{ ...s.classBadge, background: meta.color + "22", color: meta.color }}>
                             {meta.icon} {meta.label}
                           </span>
-                          {!m.is_best && (
-                            <span style={s.bestMove}>best: {m.best_move}</span>
-                          )}
+                          {!m.is_best && <span style={s.bestMove}>best: {m.best_move}</span>}
                           <span style={s.cpLoss}>−{m.cp_loss}cp</span>
                         </div>
                       );
@@ -362,6 +458,8 @@ const s = {
   left:        { display: "flex", flexDirection: "column", gap: "10px", flexShrink: 0 },
   statusBadge: { padding: "8px 12px", borderRadius: "6px", fontWeight: 700, color: "#1a1a2e", textAlign: "center", fontSize: "0.95rem", width: "580px", boxSizing: "border-box" },
   error:       { background: "#7f1d1d", color: "#fca5a5", padding: "8px 12px", borderRadius: "6px", fontSize: "0.9rem", width: "580px", boxSizing: "border-box" },
+  timer:       { fontFamily: "monospace", fontSize: "1.5rem", fontWeight: 700, textAlign: "center", padding: "8px 16px", borderRadius: "8px", border: "2px solid", background: "#0d1117", letterSpacing: "0.05em", width: "580px", boxSizing: "border-box" },
+  timerWarn:   { fontSize: "0.85rem", fontWeight: 400, animation: "pulse 1s infinite" },
   hint:        { margin: 0, textAlign: "center", fontSize: "0.72rem", color: "#475569" },
   right:       { flex: 1, minWidth: "220px", maxWidth: "320px", display: "flex", flexDirection: "column", gap: "14px" },
   block:       { display: "flex", flexDirection: "column", gap: "8px" },
@@ -370,6 +468,9 @@ const s = {
   diffBtn:     { padding: "6px 12px", borderRadius: "6px", border: "1px solid #2a3a5a", background: "#16213e", color: "#94a3b8", cursor: "pointer", fontSize: "0.85rem" },
   diffActive:  { background: "#e2b96f", color: "#1a1a2e", border: "1px solid #e2b96f", fontWeight: 700 },
   startBtn:    { padding: "10px", background: "#e2b96f", color: "#1a1a2e", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "1rem", cursor: "pointer" },
+  actionRow:   { display: "flex", gap: "8px" },
+  resignBtn:   { flex: 1, padding: "9px", background: "#7f1d1d", color: "#fca5a5", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" },
+  drawBtn:     { flex: 1, padding: "9px", background: "#1e3a5f", color: "#93c5fd", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" },
   history:     { background: "#0d1e3a", borderRadius: "6px", padding: "10px 12px", maxHeight: "200px", overflowY: "auto" },
   row:         { display: "flex", gap: "8px", padding: "3px 0", fontSize: "0.85rem", fontFamily: "monospace" },
   num:         { color: "#475569", minWidth: "22px" },

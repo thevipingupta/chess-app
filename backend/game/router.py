@@ -110,6 +110,61 @@ def make_move(
     )
 
 
+@router.post("/{game_id}/resign")
+def resign(
+    game_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Player resigns — computer wins."""
+    session = db.query(GameSession).filter(
+        GameSession.id == game_id, GameSession.user_id == user_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if session.result != "in_progress":
+        raise HTTPException(status_code=400, detail="Game is already over")
+
+    session.result = "black"
+    db.commit()
+    return {"game_over": True, "winner": "black"}
+
+
+@router.post("/{game_id}/draw-offer")
+def draw_offer(
+    game_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Player offers a draw. Computer accepts if position is roughly equal (≤100cp)."""
+    session = db.query(GameSession).filter(
+        GameSession.id == game_id, GameSession.user_id == user_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if session.result != "in_progress":
+        raise HTTPException(status_code=400, detail="Game is already over")
+
+    moves = session.pgn.split() if session.pgn else []
+    board = apply_moves(moves)
+
+    try:
+        with chess.engine.SimpleEngine.popen_uci(settings.stockfish_path) as engine:
+            info = engine.analyse(board, chess.engine.Limit(time=0.1))
+            score = info["score"].white().score(mate_score=10000)
+    except FileNotFoundError:
+        raise HTTPException(status_code=503, detail="Stockfish not available")
+
+    if score is None or abs(score) <= 100:
+        session.result = "draw"
+        db.commit()
+        return {"accepted": True, "message": "Computer accepts the draw — well played!"}
+    elif score > 0:
+        return {"accepted": False, "message": "Computer declines — it's winning and wants to play on!"}
+    else:
+        return {"accepted": False, "message": "Computer declines — keep fighting, you might turn it around!"}
+
+
 @router.post("/{game_id}/takeback")
 def takeback(
     game_id: int,
