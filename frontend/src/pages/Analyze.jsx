@@ -63,6 +63,19 @@ export default function Analyze() {
   const [error,     setError]     = useState("");
   const [result,    setResult]    = useState(null);   // { headers, moves, final_fen }
   const [cursor,    setCursor]    = useState(-1);     // -1 = start position
+  const [boardFen,  setBoardFen]  = useState(STARTING_FEN);
+  const [evalNow,   setEvalNow]   = useState(0);
+
+  // Update board whenever cursor or result changes
+  useEffect(() => {
+    if (!result) { setBoardFen(STARTING_FEN); setEvalNow(0); return; }
+    if (cursor === -1) { setBoardFen(STARTING_FEN); setEvalNow(0); return; }
+    const move = result.moves[cursor];
+    if (move) {
+      setBoardFen(move.fen_after);
+      setEvalNow(move.eval_after ?? 0);
+    }
+  }, [cursor, result]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -92,6 +105,8 @@ export default function Analyze() {
     setLoading(true);
     setResult(null);
     setCursor(-1);
+    setBoardFen(STARTING_FEN);
+    setEvalNow(0);
     try {
       const res = await api.post("/analysis/pgn", { pgn: pgnText });
       setResult(res.data);
@@ -104,10 +119,6 @@ export default function Analyze() {
 
   // ── Derived display values ───────────────────────────────────────────────────
   const currentMove = result?.moves?.[cursor] ?? null;
-  const fen = cursor === -1
-    ? STARTING_FEN
-    : (currentMove?.fen_after ?? result?.final_fen ?? STARTING_FEN);
-  const evalNow = currentMove?.eval_after ?? 0;
 
   // Summary counts
   const summary = result ? result.moves.reduce((acc, m) => {
@@ -175,7 +186,8 @@ export default function Analyze() {
               <EvalBar evalVal={evalNow} />
               <div style={{ width: "500px" }}>
                 <Chessboard
-                  position={fen}
+                  key={cursor}
+                  position={boardFen}
                   arePiecesDraggable={false}
                   customSquareStyles={squareStyles(currentMove)}
                 />
