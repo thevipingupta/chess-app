@@ -137,6 +137,27 @@ export default function Game() {
     setOptionSquares(hl);
   }, [gameId, gameOver, thinking, selectedSq, localChess, sendMove]);
 
+  const takeBack = async () => {
+    if (!gameId || thinking) return;
+    setThinking(true);
+    setError("");
+    try {
+      const { data } = await api.post(`/game/${gameId}/takeback`);
+      setFen(data.fen);
+      setStatus("ok");
+      setGameOver(false);
+      setWinner(null);
+      setSelectedSq(null);
+      setOptionSquares({});
+      setMoveHistory(h => h.slice(0, -1));
+      try { setLocalChess(new Chess(data.fen)); } catch {}
+    } catch (e) {
+      setError(e.response?.data?.detail || "Take back failed");
+    } finally {
+      setThinking(false);
+    }
+  };
+
   const runAnalysis = async () => {
     if (!gameId || analyzing) return;
     setAnalyzing(true);
@@ -210,6 +231,13 @@ export default function Game() {
           <button style={s.startBtn} onClick={startGame} disabled={thinking}>
             {gameId ? (gameOver ? "▶ Play Again" : "↺ New Game") : "▶ Start Game"}
           </button>
+
+          {gameId && !gameOver && difficulty <= 10 && moveHistory.length > 0 && (
+            <button style={{ ...s.startBtn, background: "#78350f", color: "#fde68a" }}
+              onClick={takeBack} disabled={thinking}>
+              ↩ Take Back
+            </button>
+          )}
 
           {gameOver && (
             <button style={{ ...s.startBtn, background: "#1e3a5f", color: "#93c5fd" }}

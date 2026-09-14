@@ -110,6 +110,36 @@ def make_move(
     )
 
 
+@router.post("/{game_id}/takeback")
+def takeback(
+    game_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Undo the last player + computer move pair. Only allowed at difficulty ≤ 10."""
+    session = db.query(GameSession).filter(
+        GameSession.id == game_id, GameSession.user_id == user_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if session.difficulty > 10:
+        raise HTTPException(status_code=400, detail="Take back is only available at Beginner, Casual, and Intermediate levels")
+
+    moves = session.pgn.split() if session.pgn else []
+    if not moves:
+        raise HTTPException(status_code=400, detail="No moves to take back")
+
+    # Remove last 2 moves (player + computer reply), or 1 if only player moved
+    moves = moves[:-2] if len(moves) >= 2 else []
+    board = apply_moves(moves)
+
+    session.pgn = " ".join(moves)
+    session.result = "in_progress"   # restore if game was already over
+    db.commit()
+
+    return {"fen": board.fen(), "move_count": len(moves)}
+
+
 @router.get("/{game_id}/analyze")
 def analyze(
     game_id: int,
