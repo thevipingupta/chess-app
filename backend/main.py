@@ -6,8 +6,12 @@ Start with:
 Swagger UI: http://localhost:8000/docs
 """
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
 from backend.database import Base, engine
@@ -38,3 +42,16 @@ app.include_router(analysis_router)
 @app.get("/health")
 def health():
     return {"status": "ok", "version": "1.0.0"}
+
+
+# ── Serve built React frontend (production / Railway) ─────────────────────────
+# Only active when `frontend/dist` exists (i.e. after `npm run build`).
+# Locally you run `npm run dev` separately, so this block is skipped.
+_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+if _DIST.exists():
+    app.mount("/assets", StaticFiles(directory=str(_DIST / "assets")), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def _serve_spa(full_path: str):
+        """Catch-all: serve index.html so React Router handles client-side routing."""
+        return FileResponse(str(_DIST / "index.html"))

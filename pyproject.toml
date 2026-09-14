@@ -15,7 +15,8 @@ dependencies = [
     "python-multipart>=0.0.9",
     "pydantic[email]>=2.13.5",
     "bcrypt>=5.0.0",
-    "psycopg2-binary>=2.9.0",  # PostgreSQL driver (used on Render; ignored for SQLite locally)
+    "psycopg2-binary>=2.9.0",  # PostgreSQL driver (used on Railway/Render; ignored for SQLite locally)
+    "aiofiles>=23.0.0",        # required by FastAPI StaticFiles for serving built frontend
 ]
 
 [tool.ruff]

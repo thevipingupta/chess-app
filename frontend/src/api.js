@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000" });
+// VITE_API_URL unset locally → falls back to localhost
+// VITE_API_URL="" on Railway → empty string = same origin (frontend served by FastAPI)
+const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000" });
 
 // Attach JWT to every request if present
 api.interceptors.request.use((config) => {
