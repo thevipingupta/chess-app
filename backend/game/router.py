@@ -188,12 +188,16 @@ def get_hint(
     try:
         with chess.engine.SimpleEngine.popen_uci(settings.stockfish_path) as engine:
             result = engine.play(board, chess.engine.Limit(time=0.4))
-            if not result.move:
-                raise HTTPException(status_code=400, detail="No hint available")
-            uci = result.move.uci()
-            return {"from": uci[:2], "to": uci[2:4]}
+        if not result.move:
+            raise HTTPException(status_code=400, detail="No hint available")
+        uci = result.move.uci()
+        return {"from": uci[:2], "to": uci[2:4]}
+    except HTTPException:
+        raise
     except FileNotFoundError:
-        raise HTTPException(status_code=503, detail="Stockfish not available")
+        raise HTTPException(status_code=503, detail="Stockfish not found — check server config")
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Hint failed: {exc}")
 
 
 @router.post("/{game_id}/takeback")

@@ -13,8 +13,8 @@ const DIFFICULTIES = [
   { level: 20, label: "Grandmaster" },
 ];
 
-// Preset time controls in minutes
-const TIME_PRESETS = [1, 2, 3, 5, 10, 15, 30];
+// Preset time controls in minutes (0 = no limit)
+const TIME_PRESETS = [0, 1, 2, 3, 5, 10, 15, 30];
 
 const STATUS_COLOR = {
   ok:        "#4ade80",
@@ -105,9 +105,9 @@ export default function Game() {
   const getTimeSeconds = () => {
     if (useCustom) {
       const v = parseInt(customInput, 10);
-      return isNaN(v) || v < 1 ? 300 : v * 60;
+      return isNaN(v) || v < 1 ? null : v * 60;
     }
-    return selectedMinutes * 60;
+    return selectedMinutes === 0 ? null : selectedMinutes * 60; // 0 = no limit
   };
 
   const resetToIdle = () => {
@@ -361,23 +361,6 @@ export default function Game() {
           </div>
           {error && <div style={s.error}>{error}</div>}
 
-          {/* Clocks — shown once game starts */}
-          {gameId && playerTime !== null && (
-            <div style={s.clockRow}>
-              {/* Computer clock */}
-              <div style={{ ...s.clock, ...(thinking ? s.clockActive : s.clockIdle), ...(computerLow ? s.clockDanger : {}) }}>
-                <span style={s.clockLabel}>♟ Computer</span>
-                <span style={s.clockTime}>{fmtTime(computerTime ?? 0)}</span>
-              </div>
-              {/* Player clock */}
-              <div style={{ ...s.clock, ...(!thinking && !gameOver ? s.clockActive : s.clockIdle), ...(playerLow ? s.clockDanger : {}) }}>
-                <span style={s.clockLabel}>♙ You</span>
-                <span style={s.clockTime}>{fmtTime(playerTime ?? 0)}</span>
-                {playerLow && <span style={s.clockWarn}>⚡ {playerTime}s</span>}
-              </div>
-            </div>
-          )}
-
           <div style={{ width: "580px" }}>
             <Chessboard options={{
               position: fen,
@@ -392,6 +375,27 @@ export default function Game() {
 
         {/* ── Right: controls ── */}
         <div style={s.right}>
+
+          {/* Clocks — compact widget in right panel */}
+          {gameId && (
+            <div style={s.block}>
+              <p style={s.label}>Clock</p>
+              <div style={s.clockPanel}>
+                <div style={{ ...s.clockCell, ...(thinking ? s.clockCellActive : {}), ...(computerLow ? s.clockCellDanger : {}) }}>
+                  <span style={s.clockCellLabel}>♟ Computer</span>
+                  <span style={s.clockCellTime}>
+                    {computerTime === null ? "∞" : fmtTime(computerTime)}
+                  </span>
+                </div>
+                <div style={{ ...s.clockCell, ...(!thinking && !gameOver ? s.clockCellActive : {}), ...(playerLow ? s.clockCellDanger : {}) }}>
+                  <span style={s.clockCellLabel}>♙ You{playerLow ? ` ⚡${playerTime}s` : ""}</span>
+                  <span style={s.clockCellTime}>
+                    {playerTime === null ? "∞" : fmtTime(playerTime)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Difficulty */}
           <div style={s.block}>
@@ -416,7 +420,7 @@ export default function Game() {
                   style={{ ...s.timeBtn, ...(!useCustom && selectedMinutes === m ? s.timeActive : {}) }}
                   onClick={() => { setSelectedMinutes(m); setUseCustom(false); }}
                   disabled={activeGame}
-                >{m}m</button>
+                >{m === 0 ? "∞" : `${m}m`}</button>
               ))}
               <button
                 style={{ ...s.timeBtn, ...(useCustom ? s.timeActive : {}), minWidth: "52px" }}
@@ -562,15 +566,13 @@ const s = {
   statusBadge: { padding: "8px 12px", borderRadius: "6px", fontWeight: 700, color: "#1a1a2e", textAlign: "center", fontSize: "0.95rem", width: "580px", boxSizing: "border-box" },
   error:       { background: "#7f1d1d", color: "#fca5a5", padding: "8px 12px", borderRadius: "6px", fontSize: "0.9rem", width: "580px", boxSizing: "border-box" },
 
-  // Clocks
-  clockRow:    { display: "flex", gap: "10px", width: "580px" },
-  clock:       { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "10px 14px", borderRadius: "8px", border: "2px solid", transition: "all 0.3s" },
-  clockIdle:   { borderColor: "#1e293b", background: "#0d1117", opacity: 0.6 },
-  clockActive: { borderColor: "#4ade80", background: "#0a1f0a" },
-  clockDanger: { borderColor: "#f87171", background: "#1f0a0a", opacity: 1 },
-  clockLabel:  { fontSize: "0.7rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" },
-  clockTime:   { fontFamily: "monospace", fontSize: "1.6rem", fontWeight: 700, letterSpacing: "0.05em" },
-  clockWarn:   { fontSize: "0.72rem", color: "#f87171", fontWeight: 600, marginTop: "2px" },
+  // Compact clocks in right panel
+  clockPanel:       { display: "flex", flexDirection: "column", gap: "4px" },
+  clockCell:        { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 12px", borderRadius: "6px", border: "1px solid #1e293b", background: "#0d1117", opacity: 0.55, transition: "all 0.3s" },
+  clockCellActive:  { border: "1px solid #4ade80", background: "#0a1f0a", opacity: 1 },
+  clockCellDanger:  { border: "1px solid #f87171", background: "#1f0a0a", opacity: 1 },
+  clockCellLabel:   { fontSize: "0.78rem", color: "#94a3b8" },
+  clockCellTime:    { fontFamily: "monospace", fontSize: "1.05rem", fontWeight: 700, letterSpacing: "0.04em" },
 
   hint:        { margin: 0, textAlign: "center", fontSize: "0.72rem", color: "#475569" },
   right:       { flex: 1, minWidth: "220px", maxWidth: "320px", display: "flex", flexDirection: "column", gap: "14px" },
