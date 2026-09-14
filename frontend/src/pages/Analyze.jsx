@@ -87,26 +87,41 @@ export default function Analyze() {
   const [pgnText,   setPgnText]   = useState("");
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState("");
-  const [result,    setResult]    = useState(null);   // { headers, moves, final_fen }
-  const [fens,      setFens]      = useState([STARTING_FEN]); // fens[cursor+1]
-  const [cursor,    setCursor]    = useState(-1);     // -1 = start position
+  const [result,   setResult]   = useState(null);
+  const [cursor,   setCursor]   = useState(-1);
+  const [boardFen, setBoardFen] = useState(STARTING_FEN);
+  const fensRef = useRef([STARTING_FEN]);  // ref — always current, no async lag
 
-  // Rebuild FEN list whenever a new result arrives
+  // Build FEN array into ref the moment result arrives, reset board to start
   useEffect(() => {
-    if (!result) { setFens([STARTING_FEN]); return; }
-    setFens(buildFens(result.moves));
+    if (!result) {
+      fensRef.current = [STARTING_FEN];
+      setBoardFen(STARTING_FEN);
+      return;
+    }
+    fensRef.current = buildFens(result.moves);
+    setCursor(-1);
+    setBoardFen(STARTING_FEN);
+  }, [result]);
+
+  // Single navigation function — updates cursor + boardFen atomically
+  const stepTo = useCallback((next) => {
+    const total = result?.moves?.length ?? 0;
+    const clamped = Math.max(-1, Math.min(total - 1, next));
+    setCursor(clamped);
+    setBoardFen(fensRef.current[clamped + 1] ?? STARTING_FEN);
   }, [result]);
 
   // Keyboard navigation
   useEffect(() => {
     if (!result) return;
     const handler = (e) => {
-      if (e.key === "ArrowLeft")  setCursor(c => Math.max(-1, c - 1));
-      if (e.key === "ArrowRight") setCursor(c => Math.min(result.moves.length - 1, c + 1));
+      if (e.key === "ArrowLeft")  stepTo(cursor - 1);
+      if (e.key === "ArrowRight") stepTo(cursor + 1);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [result]);
+  }, [result, cursor, stepTo]);
 
   // ── File upload ─────────────────────────────────────────────────────────────
   const onFileChange = useCallback((e) => {
@@ -124,8 +139,9 @@ export default function Analyze() {
     setError("");
     setLoading(true);
     setResult(null);
-    setFens([STARTING_FEN]);
+    fensRef.current = [STARTING_FEN];
     setCursor(-1);
+    setBoardFen(STARTING_FEN);
     try {
       const res = await api.post("/analysis/pgn", { pgn: pgnText });
       setResult(res.data);
@@ -138,8 +154,6 @@ export default function Analyze() {
 
   // ── Derived display values ───────────────────────────────────────────────────
   const currentMove = result?.moves?.[cursor] ?? null;
-  // fens[0] = start, fens[cursor+1] = position after move at cursor
-  const boardFen = fens[cursor + 1] ?? STARTING_FEN;
   const evalNow  = currentMove?.eval_after ?? 0;
 
   // Summary counts
@@ -208,9 +222,12 @@ export default function Analyze() {
               <EvalBar evalVal={evalNow} />
               <div style={{ width: "500px" }}>
                 <Chessboard
-                  position={boardFen}
-                  arePiecesDraggable={false}
-                  customSquareStyles={squareStyles(currentMove)}
+                  key={boardFen}
+                  options={{
+                    position: boardFen,
+                    arePiecesDraggable: false,
+                    customSquareStyles: squareStyles(currentMove),
+                  }}
                 />
               </div>
             </div>
@@ -232,13 +249,13 @@ export default function Analyze() {
 
             {/* Navigation */}
             <div style={s.navRow}>
-              <button style={s.navBtn} onClick={() => setCursor(-1)} title="Start">⏮</button>
-              <button style={s.navBtn} onClick={() => setCursor(c => Math.max(-1, c - 1))} title="Previous (←)">◀</button>
+              <button style={s.navBtn} onClick={() => stepTo(-1)} title="Start">⏮</button>
+              <button style={s.navBtn} onClick={() => stepTo(cursor - 1)} title="Previous (←)">◀</button>
               <span style={s.moveCounter}>
                 {cursor === -1 ? "Start" : `Move ${currentMove?.move_num} (${currentMove?.side === "white" ? "W" : "B"})`}
               </span>
-              <button style={s.navBtn} onClick={() => setCursor(c => Math.min(result.moves.length - 1, c + 1))} title="Next (→)">▶</button>
-              <button style={s.navBtn} onClick={() => setCursor(result.moves.length - 1)} title="End">⏭</button>
+              <button style={s.navBtn} onClick={() => stepTo(cursor + 1)} title="Next (→)">▶</button>
+              <button style={s.navBtn} onClick={() => stepTo(result.moves.length - 1)} title="End">⏭</button>
             </div>
 
             {/* New analysis button */}
@@ -275,8 +292,8 @@ export default function Analyze() {
                   return (
                     <div key={pairIdx} style={s.movePair}>
                       <span style={s.moveNum}>{wMove.move_num}.</span>
-                      <MoveChip move={wMove} idx={wIdx} cursor={cursor} setCursor={setCursor} />
-                      {bMove && <MoveChip move={bMove} idx={bIdx} cursor={cursor} setCursor={setCursor} />}
+                      <MoveChip move={wMove} idx={wIdx} cursor={cursor} onStep={stepTo} />
+                      {bMove && <MoveChip move={bMove} idx={bIdx} cursor={cursor} onStep={stepTo} />}
                     </div>
                   );
                 })}
@@ -289,7 +306,7 @@ export default function Analyze() {
   );
 }
 
-function MoveChip({ move, idx, cursor, setCursor }) {
+function MoveChip({ move, idx, cursor, onStep }) {
   const meta   = CLASS_META[move.classification] || CLASS_META.good;
   const active = cursor === idx;
   return (
@@ -300,7 +317,7 @@ function MoveChip({ move, idx, cursor, setCursor }) {
         borderColor:  active ? meta.color : "transparent",
         color:        active ? "#fff" : "#ccc",
       }}
-      onClick={() => setCursor(idx)}
+      onClick={() => onStep(idx)}
       title={`${meta.label}${move.cp_loss > 0 ? ` · −${move.cp_loss}cp` : ""}`}
     >
       <span style={{ color: meta.color, fontSize: "0.7rem" }}>{meta.icon}</span>
