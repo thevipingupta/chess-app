@@ -1,16 +1,11 @@
 # Railway deployment config — chess-app
-# Single service: FastAPI serves both the API and the built React frontend
+# Uses Dockerfile for full build control (nixpacks is skipped when Dockerfile exists)
 #
-# After first deploy, set these env vars in Railway dashboard:
+# Required env vars to set in Railway dashboard:
 #   SECRET_KEY        = any long random string
-#   FRONTEND_ORIGIN   = https://<your-app>.up.railway.app
+#   FRONTEND_ORIGIN   = https://<your-app>.up.railway.app  (set after first deploy)
 #   STOCKFISH_PATH    = /usr/games/stockfish
 #   DATABASE_URL      = (auto-set by Railway PostgreSQL plugin)
-#   VITE_API_URL      = (leave empty — frontend is served from same origin)
-
-[build]
-builder = "nixpacks"
-buildCommand = "cd frontend && npm install && npm run build"
 
 [deploy]
 startCommand = "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
