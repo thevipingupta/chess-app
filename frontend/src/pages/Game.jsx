@@ -420,7 +420,7 @@ export default function Game() {
                   style={{ ...s.timeBtn, ...(!useCustom && selectedMinutes === m ? s.timeActive : {}) }}
                   onClick={() => { setSelectedMinutes(m); setUseCustom(false); }}
                   disabled={activeGame}
-                >{m === 0 ? "∞" : `${m}m`}</button>
+                >{m === 0 ? "No Time" : `${m}m`}</button>
               ))}
               <button
                 style={{ ...s.timeBtn, ...(useCustom ? s.timeActive : {}), minWidth: "52px" }}
