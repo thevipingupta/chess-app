@@ -228,7 +228,7 @@ export default function Game() {
                 <button key={d.level}
                   style={{ ...s.diffBtn, ...(difficulty === d.level ? s.diffActive : {}) }}
                   onClick={() => setDifficulty(d.level)}
-                  disabled={!!gameId && !gameOver}
+                  disabled={false}
                 >{d.label}</button>
               ))}
             </div>
