@@ -1,0 +1,22 @@
+[project]
+name = "chess-app"
+version = "1.0.0"
+description = "Online chess — play vs computer and solve puzzles"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "python-chess>=1.999",
+    "stockfish>=3.28.0",
+    "python-jose[cryptography]>=3.3.0",
+    "sqlalchemy>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-multipart>=0.0.9",
+    "pydantic[email]>=2.13.5",
+    "bcrypt>=5.0.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
