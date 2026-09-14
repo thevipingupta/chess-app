@@ -4,16 +4,25 @@ import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import api from "../api";
 
-// Build a FEN snapshot array from UCI move list using chess.js
-// fens[0] = starting position, fens[1] = after move 0, etc.
+// Build a FEN snapshot array from the move list returned by the API.
+// fens[0] = starting position, fens[n] = position after move index n-1.
+// Uses SAN notation (m.san) — most reliable with chess.js v1.x.
 function buildFens(moves) {
   const chess = new Chess();
   const fens  = [chess.fen()];
   for (const m of moves) {
     try {
-      chess.move({ from: m.uci.slice(0, 2), to: m.uci.slice(2, 4), promotion: m.uci[4] || undefined });
+      chess.move(m.san);          // SAN: "e4", "Nf3", "O-O", etc.
     } catch {
-      // If a move fails just keep current position
+      // SAN failed — try UCI object form as fallback
+      try {
+        const from = m.uci.slice(0, 2);
+        const to   = m.uci.slice(2, 4);
+        const promo = m.uci[4];
+        chess.move(promo ? { from, to, promotion: promo } : { from, to });
+      } catch {
+        // move totally failed — repeat last position so indexing stays aligned
+      }
     }
     fens.push(chess.fen());
   }
@@ -199,7 +208,6 @@ export default function Analyze() {
               <EvalBar evalVal={evalNow} />
               <div style={{ width: "500px" }}>
                 <Chessboard
-                  key={cursor}
                   position={boardFen}
                   arePiecesDraggable={false}
                   customSquareStyles={squareStyles(currentMove)}
