@@ -47,6 +47,9 @@ export default function Game() {
   const [optionSquares, setOptionSquares] = useState({});
   const [localChess, setLocalChess]       = useState(null);
 
+  // Take back — allowed once per game
+  const [takeBackUsed, setTakeBackUsed] = useState(false);
+
   // Analysis
   const [analysis, setAnalysis]         = useState(null);
   const [analyzing, setAnalyzing]       = useState(false);
@@ -58,6 +61,7 @@ export default function Game() {
     setOptionSquares({});
     setAnalysis(null);
     setShowAnalysis(false);
+    setTakeBackUsed(false);
     try {
       const { data } = await api.post("/game/new", { difficulty });
       setGameId(data.game_id);
@@ -150,6 +154,7 @@ export default function Game() {
       setSelectedSq(null);
       setOptionSquares({});
       setMoveHistory(h => h.slice(0, -1));
+      setTakeBackUsed(true);
       try { setLocalChess(new Chess(data.fen)); } catch {}
     } catch (e) {
       setError(e.response?.data?.detail || "Take back failed");
@@ -232,7 +237,7 @@ export default function Game() {
             {gameId ? (gameOver ? "▶ Play Again" : "↺ New Game") : "▶ Start Game"}
           </button>
 
-          {gameId && !gameOver && difficulty <= 10 && moveHistory.length > 0 && (
+          {gameId && !gameOver && difficulty <= 10 && moveHistory.length > 0 && !takeBackUsed && (
             <button style={{ ...s.startBtn, background: "#78350f", color: "#fde68a" }}
               onClick={takeBack} disabled={thinking}>
               ↩ Take Back

@@ -1,72 +1,70 @@
 /**
- * Chess move sound using the Web Audio API.
- * Generates a short percussive "wood thud" — no external files needed.
+ * Chess move sounds using the Web Audio API.
+ * Simulates a wooden chess piece "tock" — tone + subtle noise layer, no files needed.
  */
-export function playMoveSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Short noise burst that decays quickly — sounds like a piece landing on wood
-    const duration = 0.06; // seconds
-    const sampleRate = ctx.sampleRate;
-    const bufferSize = Math.floor(sampleRate * duration);
-    const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
-    const data = buffer.getChannelData(0);
-
-    for (let i = 0; i < bufferSize; i++) {
-      // White noise * exponential decay envelope
-      const t = i / bufferSize;
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 3);
-    }
-
-    // Low-pass filter to warm it up
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 1800;
-
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.6, ctx.currentTime);
-
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
-  } catch {
-    // Silently fail if AudioContext isn't available
-  }
+function createCtx() {
+  return new (window.AudioContext || window.webkitAudioContext)();
 }
 
-/** A slightly higher-pitched sound for the opponent's response move. */
-export function playOpponentMoveSound() {
+/**
+ * Woody "tock" — a short sine tone at ~520 Hz with quick exponential decay,
+ * layered with a thin noise transient for the initial attack click.
+ */
+function playTock(frequency = 520, gainLevel = 0.35) {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const duration = 0.06;
-    const sampleRate = ctx.sampleRate;
-    const bufferSize = Math.floor(sampleRate * duration);
-    const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
-    const data = buffer.getChannelData(0);
+    const ctx = createCtx();
+    const t = ctx.currentTime;
 
-    for (let i = 0; i < bufferSize; i++) {
-      const t = i / bufferSize;
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 3);
+    /* ── Tone body (sine) ── */
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(frequency, t);
+    osc.frequency.exponentialRampToValueAtTime(frequency * 0.6, t + 0.08);
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(gainLevel, t);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+    osc.connect(oscGain);
+    oscGain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.18);
+
+    /* ── Attack transient (noise burst, very short) ── */
+    const sampleRate = ctx.sampleRate;
+    const bufSize = Math.floor(sampleRate * 0.025);
+    const buf = ctx.createBuffer(1, bufSize, sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 4);
     }
 
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 2400; // slightly brighter tone
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.value = frequency * 1.5;
+    noiseFilter.Q.value = 0.8;
 
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(gainLevel * 0.4, t);
 
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = buf;
+    noiseSource.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noiseSource.start(t);
   } catch {
     // Silently fail
   }
+}
+
+/** Your move — warm, mid-range tock. */
+export function playMoveSound() {
+  playTock(500, 0.35);
+}
+
+/** Opponent's move — slightly deeper tock so you can tell them apart. */
+export function playOpponentMoveSound() {
+  playTock(380, 0.28);
 }
