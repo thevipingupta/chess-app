@@ -55,6 +55,22 @@ export default function Game() {
   const [analyzing, setAnalyzing]       = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
+  const resetToIdle = () => {
+    setGameId(null);
+    setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    setStatus("ok");
+    setGameOver(false);
+    setWinner(null);
+    setMoveHistory([]);
+    setLocalChess(null);
+    setSelectedSq(null);
+    setOptionSquares({});
+    setAnalysis(null);
+    setShowAnalysis(false);
+    setTakeBackUsed(false);
+    setError("");
+  };
+
   const startGame = async () => {
     setError("");
     setSelectedSq(null);
@@ -234,9 +250,19 @@ export default function Game() {
             </div>
           </div>
 
-          <button style={s.startBtn} onClick={startGame} disabled={thinking}>
-            {gameId ? (gameOver ? "▶ Play Again" : "↺ New Game") : "▶ Start Game"}
-          </button>
+          {/* No game yet or game over → start/play again */}
+          {(!gameId || gameOver) && (
+            <button style={s.startBtn} onClick={startGame} disabled={thinking}>
+              {gameOver ? "▶ Play Again" : "▶ Start Game"}
+            </button>
+          )}
+          {/* Game in progress → reset to idle so difficulty can be changed */}
+          {gameId && !gameOver && (
+            <button style={{ ...s.startBtn, background: "#374151" }}
+              onClick={resetToIdle} disabled={thinking}>
+              ↺ New Game
+            </button>
+          )}
 
           {gameId && !gameOver && difficulty <= 10 && moveHistory.length > 0 && !takeBackUsed && (
             <button style={{ ...s.startBtn, background: "#78350f", color: "#fde68a" }}
