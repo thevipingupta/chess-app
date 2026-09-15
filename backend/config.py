@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 480   # 8 hours
     database_url: str = "sqlite:///./chess.db"
     stockfish_path: str = "stockfish"
+    anthropic_api_key: str = ""   # optional — required only for OCR/image upload feature
 
     model_config = {"env_file": str(_ENV_FILE)}
 

@@ -17,6 +17,9 @@ dependencies = [
     "bcrypt>=5.0.0",
     "psycopg2-binary>=2.9.0",  # PostgreSQL driver (used on Railway/Render; ignored for SQLite locally)
     "aiofiles>=23.0.0",        # required by FastAPI StaticFiles for serving built frontend
+    "anthropic>=0.40.0",       # Claude Vision for OCR + handwriting correction
+    "pymupdf>=1.24.0",         # PDF → image rendering (no system deps needed)
+    "Pillow>=10.0.0",          # image normalisation before Vision API
 ]
 
 [tool.ruff]

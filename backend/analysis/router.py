@@ -3,15 +3,19 @@
 Accepts a raw PGN string, parses it with python-chess,
 runs Stockfish on every move (both colours), and returns
 per-move classifications plus headers.
+
+Also provides an OCR endpoint that accepts an image or PDF,
+extracts chess notation using Claude Vision, and returns clean PGN.
 """
 
+import base64
 import logging
 import chess
 import chess.pgn
 import chess.engine
 import io
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
 from backend.config import settings
@@ -138,3 +142,127 @@ def analyze_pgn(req: PgnRequest):
         "moves":     analysed,
         "final_fen": final_fen,
     }
+
+
+# ── OCR endpoint ──────────────────────────────────────────────────────────────
+
+_ALLOWED_TYPES = {
+    "image/png", "image/jpeg", "image/jpg", "image/webp",
+    "application/pdf",
+}
+
+_OCR_PROMPT = """\
+You are a chess scoresheet transcription expert.
+
+The image shows a chess scoresheet, PGN printout, or handwritten game notation.
+Your job is to extract the complete PGN from this image.
+
+Rules:
+1. Output ONLY valid PGN. No explanations, no markdown, no code fences.
+2. Include any visible PGN headers ([Event], [White], [Black], [Date], [Result] etc.)
+3. Use standard SAN notation for all moves (e4, Nf3, O-O, Bxe5+, etc.)
+4. Correct obvious handwriting errors — e.g. a letter that looks like both 'R' and 'P'
+   should be resolved based on what's legal in that position.
+5. If a move is completely illegible, substitute a plausible legal move and append
+   a comment after it: {illegible}.
+6. End with the result token (1-0 / 0-1 / 1/2-1/2 / *) if visible.
+
+Output raw PGN only."""
+
+
+def _image_bytes_to_b64(data: bytes, media_type: str) -> tuple[str, str]:
+    """Return (base64_string, media_type) ready for the Anthropic Vision API."""
+    return base64.standard_b64encode(data).decode(), media_type
+
+
+def _pdf_first_page_to_png(pdf_bytes: bytes) -> bytes:
+    """Render the first page of a PDF to PNG bytes using PyMuPDF."""
+    try:
+        import fitz  # pymupdf
+    except ImportError:
+        raise HTTPException(status_code=503, detail="PyMuPDF not installed — cannot process PDFs")
+
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    page = doc.load_page(0)
+    # 2× resolution for better OCR accuracy
+    mat = fitz.Matrix(2.0, 2.0)
+    pix = page.get_pixmap(matrix=mat)
+    return pix.tobytes("png")
+
+
+@router.post("/extract-pgn")
+async def extract_pgn_from_image(file: UploadFile = File(...)):
+    """
+    Accept an image (PNG/JPEG/WEBP) or PDF, extract chess notation via
+    Claude Vision, and return clean PGN text.
+    """
+    # ── Guard: API key configured? ────────────────────────────────────────────
+    if not settings.anthropic_api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="ANTHROPIC_API_KEY not configured. Add it in Railway → Variables.",
+        )
+
+    # ── Guard: file type ──────────────────────────────────────────────────────
+    content_type = (file.content_type or "").lower().split(";")[0].strip()
+    if content_type not in _ALLOWED_TYPES:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported file type '{content_type}'. Upload PNG, JPEG, WEBP, or PDF.",
+        )
+
+    # ── Read file ─────────────────────────────────────────────────────────────
+    raw = await file.read()
+    if len(raw) > 20 * 1024 * 1024:  # 20 MB cap
+        raise HTTPException(status_code=413, detail="File too large (max 20 MB)")
+
+    # ── PDF → PNG ─────────────────────────────────────────────────────────────
+    if content_type == "application/pdf":
+        raw = _pdf_first_page_to_png(raw)
+        content_type = "image/png"
+
+    # ── Normalise JPEG content-type ───────────────────────────────────────────
+    if content_type == "image/jpg":
+        content_type = "image/jpeg"
+
+    # ── Call Claude Vision ────────────────────────────────────────────────────
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+
+        b64_data, media_type = _image_bytes_to_b64(raw, content_type)
+
+        message = client.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=2048,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": media_type,
+                                "data": b64_data,
+                            },
+                        },
+                        {"type": "text", "text": _OCR_PROMPT},
+                    ],
+                }
+            ],
+        )
+    except Exception as exc:
+        logger.exception("Claude Vision call failed")
+        raise HTTPException(status_code=502, detail=f"Vision API error: {exc}")
+
+    pgn_text = message.content[0].text.strip()
+
+    # Strip accidental markdown code fences if the model adds them
+    if pgn_text.startswith("```"):
+        lines = pgn_text.splitlines()
+        pgn_text = "\n".join(
+            ln for ln in lines if not ln.startswith("```")
+        ).strip()
+
+    return {"pgn": pgn_text}
