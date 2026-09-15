@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
@@ -34,6 +34,37 @@ const CLASS_META = {
   mistake:     { label: "Mistake",     color: "#fb923c", icon: "?" },
   blunder:     { label: "Blunder",     color: "#f87171", icon: "??" },
 };
+
+// Replay a game's UCI move list from the start, returning the FEN after every
+// ply plus the move list itself, so the board can be stepped through post-game
+// without any extra backend call.
+function buildReview(moveHistory) {
+  const chess = new Chess();
+  const fens = [chess.fen()];
+  const ucis = [];
+  for (const round of moveHistory) {
+    for (const uci of [round.player, round.computer]) {
+      if (!uci) continue;
+      try {
+        const from = uci.slice(0, 2), to = uci.slice(2, 4), promotion = uci[4];
+        chess.move(promotion ? { from, to, promotion } : { from, to });
+      } catch {
+        // shouldn't happen — moves came from the server — but keep indexing aligned
+      }
+      fens.push(chess.fen());
+      ucis.push(uci);
+    }
+  }
+  return { fens, ucis };
+}
+
+function reviewSquareStyles(uci) {
+  if (!uci || uci.length < 4) return {};
+  return {
+    [uci.slice(0, 2)]: { background: "rgba(226,185,111,0.55)", borderRadius: "4px" },
+    [uci.slice(2, 4)]: { background: "rgba(226,185,111,0.85)", borderRadius: "4px" },
+  };
+}
 
 function fmtTime(secs) {
   const m = Math.floor(secs / 60);
@@ -78,6 +109,34 @@ export default function Game() {
   const [analysis, setAnalysis]         = useState(null);
   const [analyzing, setAnalyzing]       = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+
+  // Post-game review — step through the finished game move by move
+  const [reviewCursor, setReviewCursor] = useState(-1);
+  const review = useMemo(() => buildReview(moveHistory), [moveHistory]);
+  const reviewTotal = review.ucis.length;
+
+  useEffect(() => {
+    if (gameOver) setReviewCursor(-1);
+  }, [gameOver]);
+
+  const stepTo = useCallback((next) => {
+    setReviewCursor(Math.max(-1, Math.min(reviewTotal - 1, next)));
+  }, [reviewTotal]);
+
+  // Keyboard navigation while reviewing a finished game
+  useEffect(() => {
+    if (!gameOver || reviewTotal === 0) return;
+    const handler = (e) => {
+      if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+      if (e.key === "ArrowLeft")  stepTo(reviewCursor - 1);
+      if (e.key === "ArrowRight") stepTo(reviewCursor + 1);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [gameOver, reviewTotal, reviewCursor, stepTo]);
+
+  const displayFen = gameOver && reviewTotal > 0 ? review.fens[reviewCursor + 1] : fen;
+  const reviewHighlight = gameOver && reviewTotal > 0 ? reviewSquareStyles(review.ucis[reviewCursor]) : {};
 
   // ── Player timer (counts when it's player's turn) ───────────────────────
   useEffect(() => {
@@ -363,14 +422,27 @@ export default function Game() {
 
           <div style={{ width: "580px" }}>
             <Chessboard options={{
-              position: fen,
+              position: displayFen,
               onSquareClick: onSquareClick,
               allowDragging: false,
-              squareStyles: { ...optionSquares, ...hintSquares },
+              squareStyles: gameOver ? reviewHighlight : { ...optionSquares, ...hintSquares },
               boardStyle: { borderRadius: "6px", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" },
             }} />
           </div>
-          <p style={s.hint}>Click a piece to select, then click the destination</p>
+
+          {gameOver && reviewTotal > 0 ? (
+            <div style={s.reviewRow}>
+              <button style={s.navBtn} onClick={() => stepTo(-1)} title="Start">⏮</button>
+              <button style={s.navBtn} onClick={() => stepTo(reviewCursor - 1)} title="Previous (←)">◀</button>
+              <span style={s.reviewCounter}>
+                {reviewCursor === -1 ? "Starting position" : `Move ${reviewCursor + 1} of ${reviewTotal}`}
+              </span>
+              <button style={s.navBtn} onClick={() => stepTo(reviewCursor + 1)} title="Next (→)">▶</button>
+              <button style={s.navBtn} onClick={() => stepTo(reviewTotal - 1)} title="End">⏭</button>
+            </div>
+          ) : (
+            <p style={s.hint}>Click a piece to select, then click the destination</p>
+          )}
         </div>
 
         {/* ── Right: controls ── */}
@@ -495,8 +567,14 @@ export default function Game() {
                 {moveHistory.map((m, i) => (
                   <div key={i} style={s.row}>
                     <span style={s.num}>{i + 1}.</span>
-                    <span style={s.white}>{m.player}</span>
-                    <span style={s.black}>{m.computer || "—"}</span>
+                    <span
+                      style={{ ...s.white, ...(gameOver ? s.plyClickable : {}), ...(gameOver && reviewCursor === i * 2 ? s.plyActive : {}) }}
+                      onClick={gameOver ? () => stepTo(i * 2) : undefined}
+                    >{m.player}</span>
+                    <span
+                      style={{ ...s.black, ...(gameOver && m.computer ? s.plyClickable : {}), ...(gameOver && reviewCursor === i * 2 + 1 ? s.plyActive : {}) }}
+                      onClick={gameOver && m.computer ? () => stepTo(i * 2 + 1) : undefined}
+                    >{m.computer || "—"}</span>
                   </div>
                 ))}
               </div>
@@ -575,6 +653,11 @@ const s = {
   clockCellTime:    { fontFamily: "monospace", fontSize: "1.05rem", fontWeight: 700, letterSpacing: "0.04em" },
 
   hint:        { margin: 0, textAlign: "center", fontSize: "0.72rem", color: "#475569" },
+  reviewRow:      { display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", width: "580px" },
+  navBtn:         { background: "#16213e", border: "1px solid #2a3a5a", color: "#e2b96f", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "1rem" },
+  reviewCounter:  { color: "#94a3b8", fontSize: "0.85rem", minWidth: "150px", textAlign: "center" },
+  plyClickable:   { cursor: "pointer" },
+  plyActive:      { color: "#e2b96f", fontWeight: 700 },
   right:       { flex: 1, minWidth: "220px", maxWidth: "320px", display: "flex", flexDirection: "column", gap: "14px" },
   block:       { display: "flex", flexDirection: "column", gap: "8px" },
   label:       { margin: 0, color: "#64748b", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.08em" },
