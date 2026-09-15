@@ -155,24 +155,17 @@ _OCR_PROMPT = """\
 You are a chess scoresheet transcription expert.
 
 The image shows a chess scoresheet, PGN printout, or handwritten game notation.
-Your job is to extract the complete PGN from this image.
+Extract the complete PGN from this image.
 
 Rules:
 1. Output ONLY valid PGN. No explanations, no markdown, no code fences.
 2. Include any visible PGN headers ([Event], [White], [Black], [Date], [Result] etc.)
 3. Use standard SAN notation for all moves (e4, Nf3, O-O, Bxe5+, etc.)
-4. Correct obvious handwriting errors — e.g. a letter that looks like both 'R' and 'P'
-   should be resolved based on what's legal in that position.
-5. If a move is completely illegible, substitute a plausible legal move and append
-   a comment after it: {illegible}.
+4. Correct obvious handwriting errors using chess rules as a guide.
+5. If a move is completely illegible, write a plausible legal move followed by {illegible}.
 6. End with the result token (1-0 / 0-1 / 1/2-1/2 / *) if visible.
 
-Output raw PGN only."""
-
-
-def _image_bytes_to_b64(data: bytes, media_type: str) -> tuple[str, str]:
-    """Return (base64_string, media_type) ready for the Anthropic Vision API."""
-    return base64.standard_b64encode(data).decode(), media_type
+Output raw PGN only — no prose, no code fences."""
 
 
 def _pdf_first_page_to_png(pdf_bytes: bytes) -> bytes:
@@ -181,26 +174,58 @@ def _pdf_first_page_to_png(pdf_bytes: bytes) -> bytes:
         import fitz  # pymupdf
     except ImportError:
         raise HTTPException(status_code=503, detail="PyMuPDF not installed — cannot process PDFs")
-
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     page = doc.load_page(0)
-    # 2× resolution for better OCR accuracy
-    mat = fitz.Matrix(2.0, 2.0)
-    pix = page.get_pixmap(matrix=mat)
+    pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))  # 2× for better OCR
     return pix.tobytes("png")
+
+
+def _strip_fences(text: str) -> str:
+    """Remove accidental markdown code fences a model might add."""
+    if "```" in text:
+        lines = text.splitlines()
+        text = "\n".join(ln for ln in lines if not ln.startswith("```")).strip()
+    return text
+
+
+async def _ocr_with_ollama(image_b64: str) -> str:
+    """Call a local Ollama vision model and return the raw text response."""
+    import httpx
+
+    url = f"{settings.ollama_base_url.rstrip('/')}/api/chat"
+    payload = {
+        "model": settings.ollama_model,
+        "messages": [{
+            "role": "user",
+            "content": _OCR_PROMPT,
+            "images": [image_b64],   # Ollama expects raw base64, no data-URI prefix
+        }],
+        "stream": False,
+    }
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        resp = await client.post(url, json=payload)
+        resp.raise_for_status()
+    return resp.json()["message"]["content"].strip()
 
 
 @router.post("/extract-pgn")
 async def extract_pgn_from_image(file: UploadFile = File(...)):
     """
-    Accept an image (PNG/JPEG/WEBP) or PDF, extract chess notation via
-    Claude Vision, and return clean PGN text.
+    Accept an image (PNG/JPEG/WEBP) or PDF, extract chess notation using a
+    local Ollama vision model (e.g. llava), and return clean PGN text.
+
+    Requires OLLAMA_BASE_URL to be set in .env (e.g. http://localhost:11434).
+    This endpoint works locally only — Railway cannot reach a local Ollama.
     """
-    # ── Guard: API key configured? ────────────────────────────────────────────
-    if not settings.anthropic_api_key:
+    # ── Guard: Ollama configured? ─────────────────────────────────────────────
+    if not settings.ollama_base_url:
         raise HTTPException(
             status_code=503,
-            detail="ANTHROPIC_API_KEY not configured. Add it in Railway → Variables.",
+            detail=(
+                "OCR requires a local Ollama instance. "
+                "Set OLLAMA_BASE_URL=http://localhost:11434 in your .env, "
+                "and make sure you have pulled a vision model: ollama pull llava"
+            ),
         )
 
     # ── Guard: file type ──────────────────────────────────────────────────────
@@ -221,48 +246,17 @@ async def extract_pgn_from_image(file: UploadFile = File(...)):
         raw = _pdf_first_page_to_png(raw)
         content_type = "image/png"
 
-    # ── Normalise JPEG content-type ───────────────────────────────────────────
-    if content_type == "image/jpg":
-        content_type = "image/jpeg"
+    # ── Encode to base64 ──────────────────────────────────────────────────────
+    image_b64 = base64.standard_b64encode(raw).decode()
 
-    # ── Call Claude Vision ────────────────────────────────────────────────────
+    # ── Call Ollama vision ────────────────────────────────────────────────────
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
-        b64_data, media_type = _image_bytes_to_b64(raw, content_type)
-
-        message = client.messages.create(
-            model="claude-opus-4-5",
-            max_tokens=2048,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": b64_data,
-                            },
-                        },
-                        {"type": "text", "text": _OCR_PROMPT},
-                    ],
-                }
-            ],
-        )
+        pgn_text = await _ocr_with_ollama(image_b64)
     except Exception as exc:
-        logger.exception("Claude Vision call failed")
-        raise HTTPException(status_code=502, detail=f"Vision API error: {exc}")
+        logger.exception("Ollama OCR call failed")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Ollama error: {exc}. Is Ollama running? Does it have a vision model?",
+        )
 
-    pgn_text = message.content[0].text.strip()
-
-    # Strip accidental markdown code fences if the model adds them
-    if pgn_text.startswith("```"):
-        lines = pgn_text.splitlines()
-        pgn_text = "\n".join(
-            ln for ln in lines if not ln.startswith("```")
-        ).strip()
-
-    return {"pgn": pgn_text}
+    return {"pgn": _strip_fences(pgn_text)}

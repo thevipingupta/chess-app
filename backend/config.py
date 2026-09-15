@@ -14,7 +14,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 480   # 8 hours
     database_url: str = "sqlite:///./chess.db"
     stockfish_path: str = "stockfish"
-    anthropic_api_key: str = ""   # optional — required only for OCR/image upload feature
+    # OCR / Vision — uses local Ollama (e.g. llava). Not available on Railway.
+    ollama_base_url: str = ""       # e.g. http://localhost:11434
+    ollama_model:    str = "llava"  # any Ollama vision model you have pulled
 
     model_config = {"env_file": str(_ENV_FILE)}
 

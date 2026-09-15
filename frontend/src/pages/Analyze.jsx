@@ -191,7 +191,7 @@ export default function Analyze() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setPgnText(res.data.pgn || "");
-      setOcrNote("✨ OCR result — please review and correct before analysing");
+      setOcrNote("✨ OCR result from Ollama — please review and correct before analysing");
     } catch (err) {
       setError(err.response?.data?.detail || "OCR failed. Try a clearer image.");
     } finally {
