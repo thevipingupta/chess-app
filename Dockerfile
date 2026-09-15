@@ -28,8 +28,9 @@ RUN pip install --no-cache-dir uv && \
         pydantic-settings python-multipart "pydantic[email]" \
         bcrypt psycopg2-binary aiofiles
 
-# Copy backend source
+# Copy backend source and seed scripts
 COPY backend/ ./backend/
+COPY seed_puzzles.py seed.py ./
 
 # Copy built React frontend from stage 1
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
