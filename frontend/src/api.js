@@ -1,8 +1,9 @@
 import axios from "axios";
 
-// VITE_API_URL unset locally → falls back to localhost
-// VITE_API_URL="" on Railway → empty string = same origin (frontend served by FastAPI)
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000" });
+// Empty baseURL = relative URLs.
+// - On Railway: frontend is served by FastAPI on the same origin → relative URLs work perfectly.
+// - Locally: Vite proxy (vite.config.js) forwards /auth, /game, /puzzles, /analysis to localhost:8000.
+const api = axios.create({ baseURL: "" });
 
 // Attach JWT to every request if present
 api.interceptors.request.use((config) => {
