@@ -26,8 +26,7 @@ RUN pip install --no-cache-dir uv && \
         fastapi uvicorn[standard] python-chess stockfish \
         python-jose[cryptography] sqlalchemy python-dotenv \
         pydantic-settings python-multipart "pydantic[email]" \
-        bcrypt psycopg2-binary aiofiles \
-        "pymupdf>=1.24.0" "Pillow>=10.0.0" "httpx>=0.27.0"
+        bcrypt psycopg2-binary aiofiles
 
 # Copy backend source and seed scripts
 COPY backend/ ./backend/

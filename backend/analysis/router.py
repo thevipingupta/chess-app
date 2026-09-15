@@ -3,26 +3,20 @@
 Accepts a raw PGN string, parses it with python-chess,
 runs Stockfish on every move (both colours), and returns
 per-move classifications plus headers.
-
-Also provides an OCR endpoint that accepts an image or PDF,
-extracts chess notation using Claude Vision, and returns clean PGN.
 """
 
-import base64
-import logging
 import chess
 import chess.pgn
 import chess.engine
 import io
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from backend.config import settings
 from backend.game.engine import _classify
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
-logger = logging.getLogger(__name__)
 
 TIME_PER_MOVE = 0.15   # seconds Stockfish thinks per move
 
@@ -142,146 +136,3 @@ def analyze_pgn(req: PgnRequest):
         "moves":     analysed,
         "final_fen": final_fen,
     }
-
-
-# ── OCR endpoint ──────────────────────────────────────────────────────────────
-
-_ALLOWED_TYPES = {
-    "image/png", "image/jpeg", "image/jpg", "image/webp",
-    "application/pdf",
-}
-
-_OCR_PROMPT = """\
-You are a chess scoresheet transcription expert.
-
-The image shows a chess scoresheet, PGN printout, or handwritten game notation.
-Extract the complete PGN from this image.
-
-Rules:
-1. Output ONLY valid PGN. No explanations, no markdown, no code fences.
-2. Include any visible PGN headers ([Event], [White], [Black], [Date], [Result] etc.)
-3. Use standard SAN notation for all moves (e4, Nf3, O-O, Bxe5+, etc.)
-4. Correct obvious handwriting errors using chess rules as a guide.
-5. If a move is completely illegible, write a plausible legal move followed by {illegible}.
-6. End with the result token (1-0 / 0-1 / 1/2-1/2 / *) if visible.
-
-Output raw PGN only — no prose, no code fences."""
-
-
-def _pdf_first_page_to_png(pdf_bytes: bytes) -> bytes:
-    """Render the first page of a PDF to PNG bytes using PyMuPDF."""
-    try:
-        import fitz  # pymupdf
-    except ImportError:
-        raise HTTPException(status_code=503, detail="PyMuPDF not installed — cannot process PDFs")
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    page = doc.load_page(0)
-    pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))  # 2× for better OCR
-    return pix.tobytes("png")
-
-
-def _strip_fences(text: str) -> str:
-    """Remove accidental markdown code fences a model might add."""
-    if "```" in text:
-        lines = text.splitlines()
-        text = "\n".join(ln for ln in lines if not ln.startswith("```")).strip()
-    return text
-
-
-async def _ocr_with_ollama(image_b64: str) -> str:
-    """Call a local Ollama vision model and return the raw text response."""
-    import httpx
-    url = f"{settings.ollama_base_url.rstrip('/')}/api/chat"
-    payload = {
-        "model": settings.ollama_model,
-        "messages": [{"role": "user", "content": _OCR_PROMPT, "images": [image_b64]}],
-        "stream": False,
-    }
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        resp = await client.post(url, json=payload)
-        resp.raise_for_status()
-    return resp.json()["message"]["content"].strip()
-
-
-async def _ocr_with_gemini(image_b64: str, mime_type: str) -> str:
-    """Call Gemini Flash via REST and return the raw text response."""
-    import httpx
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-flash-latest:generateContent?key={settings.gemini_api_key}"
-    )
-    payload = {
-        "contents": [{
-            "parts": [
-                {"inline_data": {"mime_type": mime_type, "data": image_b64}},
-                {"text": _OCR_PROMPT},
-            ]
-        }]
-    }
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        resp = await client.post(url, json=payload)
-        resp.raise_for_status()
-    return resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-
-
-@router.get("/ocr-status")
-def ocr_status():
-    """Returns whether OCR is available (Ollama locally or Gemini on Railway)."""
-    return {"available": bool(settings.ollama_base_url or settings.gemini_api_key)}
-
-
-@router.post("/extract-pgn")
-async def extract_pgn_from_image(file: UploadFile = File(...)):
-    """
-    Accept an image (PNG/JPEG/WEBP) or PDF and extract chess notation.
-
-    Backend priority:
-      1. Ollama  — used when OLLAMA_BASE_URL is set (local dev)
-      2. Gemini  — used when GEMINI_API_KEY is set (Railway / any cloud)
-    """
-    # ── Guard: any vision backend configured? ─────────────────────────────────
-    if not settings.ollama_base_url and not settings.gemini_api_key:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "No OCR backend configured. "
-                "Local: set OLLAMA_BASE_URL + run `ollama pull llava`. "
-                "Railway: set GEMINI_API_KEY (free at aistudio.google.com)."
-            ),
-        )
-
-    # ── Guard: file type ──────────────────────────────────────────────────────
-    content_type = (file.content_type or "").lower().split(";")[0].strip()
-    if content_type not in _ALLOWED_TYPES:
-        raise HTTPException(
-            status_code=415,
-            detail=f"Unsupported file type '{content_type}'. Upload PNG, JPEG, WEBP, or PDF.",
-        )
-
-    # ── Read file ─────────────────────────────────────────────────────────────
-    raw = await file.read()
-    if len(raw) > 20 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="File too large (max 20 MB)")
-
-    # ── PDF → PNG ─────────────────────────────────────────────────────────────
-    if content_type == "application/pdf":
-        raw = _pdf_first_page_to_png(raw)
-        content_type = "image/png"
-
-    if content_type == "image/jpg":
-        content_type = "image/jpeg"
-
-    image_b64 = base64.standard_b64encode(raw).decode()
-
-    # ── Call vision backend (Ollama preferred, Gemini fallback) ───────────────
-    try:
-        if settings.ollama_base_url:
-            pgn_text = await _ocr_with_ollama(image_b64)
-        else:
-            pgn_text = await _ocr_with_gemini(image_b64, content_type)
-    except Exception as exc:
-        logger.exception("OCR vision call failed")
-        backend = "Ollama" if settings.ollama_base_url else "Gemini"
-        raise HTTPException(status_code=502, detail=f"{backend} OCR error: {exc}")
-
-    return {"pgn": _strip_fences(pgn_text)}

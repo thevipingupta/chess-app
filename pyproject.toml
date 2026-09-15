@@ -17,9 +17,6 @@ dependencies = [
     "bcrypt>=5.0.0",
     "psycopg2-binary>=2.9.0",  # PostgreSQL driver (used on Railway/Render; ignored for SQLite locally)
     "aiofiles>=23.0.0",        # required by FastAPI StaticFiles for serving built frontend
-    "pymupdf>=1.24.0",         # PDF → image rendering for OCR feature
-    "Pillow>=10.0.0",          # image normalisation for OCR feature
-    "httpx>=0.27.0",           # async HTTP client used to call local Ollama
 ]
 
 [tool.ruff]

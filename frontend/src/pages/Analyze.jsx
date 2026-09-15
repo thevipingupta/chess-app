@@ -99,9 +99,6 @@ export default function Analyze() {
 
   const [pgnText,      setPgnText]      = useState("");
   const [loading,      setLoading]      = useState(false);
-  const [ocrLoading,   setOcrLoading]   = useState(false);
-  const [ocrAvailable, setOcrAvailable] = useState(false); // true only when Ollama configured
-  const [ocrNote,      setOcrNote]      = useState("");
   const [error,        setError]        = useState("");
   const [result,       setResult]       = useState(null);
   const [cursor,       setCursor]       = useState(-1);
@@ -109,7 +106,6 @@ export default function Analyze() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const fensRef    = useRef([STARTING_FEN]);
   const voiceRef   = useRef(true);
-  const ocrRef     = useRef(null);
 
   // ── Speak a phrase via Web Speech API ───────────────────────────────────────
   const speak = useCallback((text) => {
@@ -125,13 +121,6 @@ export default function Analyze() {
     setVoiceEnabled(v => { voiceRef.current = !v; return !v; });
     window.speechSynthesis?.cancel();
   };
-
-  // Check whether OCR (Ollama) is available on this deployment
-  useEffect(() => {
-    api.get("/analysis/ocr-status")
-      .then(res => setOcrAvailable(!!res.data.available))
-      .catch(() => setOcrAvailable(false));
-  }, []);
 
   // Build FEN array into ref the moment result arrives, reset board to start
   useEffect(() => {
@@ -177,34 +166,9 @@ export default function Analyze() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => { setPgnText(ev.target.result || ""); setOcrNote(""); };
+    reader.onload = (ev) => { setPgnText(ev.target.result || ""); };
     reader.readAsText(file);
     e.target.value = "";
-  }, []);
-
-  // ── OCR upload (image / PDF) ─────────────────────────────────────────────────
-  const onOcrFileChange = useCallback(async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
-    setOcrLoading(true);
-    setError("");
-    setOcrNote("");
-
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await api.post("/analysis/extract-pgn", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setPgnText(res.data.pgn || "");
-      setOcrNote("✨ OCR result from Ollama — please review and correct before analysing");
-    } catch (err) {
-      setError(err.response?.data?.detail || "OCR failed. Try a clearer image.");
-    } finally {
-      setOcrLoading(false);
-    }
   }, []);
 
   // ── Submit ──────────────────────────────────────────────────────────────────
@@ -254,13 +218,10 @@ export default function Analyze() {
               style={s.textarea}
               placeholder={`Paste your PGN here…\n\nExample:\n[Event "Casual Game"]\n[White "You"]\n[Black "Opponent"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 ...`}
               value={pgnText}
-              onChange={e => { setPgnText(e.target.value); setOcrNote(""); }}
+              onChange={e => setPgnText(e.target.value)}
               spellCheck={false}
             />
           </div>
-          {ocrNote && (
-            <div style={s.ocrNote}>{ocrNote}</div>
-          )}
           <div style={s.btnRow}>
             {/* PGN file upload */}
             <button style={s.uploadBtn} onClick={() => fileRef.current?.click()}>
@@ -268,37 +229,10 @@ export default function Analyze() {
             </button>
             <input ref={fileRef} type="file" accept=".pgn,.txt" hidden onChange={onFileChange} />
 
-            {/* OCR upload — only shown when Ollama is configured locally */}
-            {ocrAvailable && (
-              <>
-                <button
-                  style={{ ...s.uploadBtn, background: "#1e3a5f", borderColor: "#60a5fa" }}
-                  onClick={() => ocrRef.current?.click()}
-                  disabled={ocrLoading}
-                  title="Upload a scanned scoresheet, photo, or PDF — Ollama reads the notation"
-                >
-                  {ocrLoading ? "⏳ Reading…" : "🔎 Scan image / PDF"}
-                </button>
-                <input
-                  ref={ocrRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,application/pdf"
-                  hidden
-                  onChange={onOcrFileChange}
-                />
-              </>
-            )}
-
-            <button style={s.analyzeBtn} onClick={analyze} disabled={loading || ocrLoading}>
+            <button style={s.analyzeBtn} onClick={analyze} disabled={loading}>
               {loading ? "⏳ Analysing…" : "🔍 Analyse Game"}
             </button>
           </div>
-          {ocrLoading && (
-            <div style={s.progress}>
-              <div style={s.spinner} />
-              <span>Ollama is reading the notation… this takes a few seconds.</span>
-            </div>
-          )}
           {loading && (
             <div style={s.progress}>
               <div style={s.spinner} />
@@ -456,7 +390,6 @@ const s = {
   progress:      { display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "1rem", color: "#94a3b8", fontSize: "0.85rem" },
   spinner:       { width: "18px", height: "18px", border: "3px solid #334", borderTop: "3px solid #e2b96f", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
   errorBox:      { marginTop: "1rem", background: "#7f1d1d44", border: "1px solid #f87171", borderRadius: "8px", padding: "0.75rem 1rem", color: "#fca5a5", fontSize: "0.9rem" },
-  ocrNote:       { marginBottom: "0.75rem", background: "#1e3a5f55", border: "1px solid #60a5fa", borderRadius: "8px", padding: "0.6rem 1rem", color: "#93c5fd", fontSize: "0.85rem" },
 
   analyzeLayout: { display: "flex", gap: "1.5rem", alignItems: "flex-start", flexWrap: "wrap" },
   boardCol:      { display: "flex", flexDirection: "column", gap: "0.75rem", alignItems: "flex-start" },
