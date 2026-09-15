@@ -22,6 +22,18 @@ export default function Login() {
     }
   };
 
+  const playAsGuest = async () => {
+    setError("");
+    try {
+      const { data } = await authApi.guest();
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("username", data.username);
+      navigate("/");
+    } catch {
+      setError("Couldn't start a guest session. Try again.");
+    }
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.hero}>
@@ -37,6 +49,10 @@ export default function Login() {
           <input style={styles.input} name="password" type="password" placeholder="Password" value={form.password} onChange={handle} required />
           <button style={styles.btn} type="submit">Sign In</button>
         </form>
+        <div style={styles.divider}><span style={styles.dividerText}>or</span></div>
+        <button style={styles.guestBtn} type="button" onClick={playAsGuest}>
+          Continue as Guest
+        </button>
         <p style={styles.link}>No account? <Link to="/register">Register</Link></p>
       </div>
     </div>
@@ -53,6 +69,9 @@ const styles = {
   title:     { textAlign: "center", color: "#fff", margin: "0 0 1.5rem", fontWeight: 400, fontSize: "1.2rem" },
   input: { display: "block", width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "6px", border: "1px solid #334", background: "#0f3460", color: "#fff", fontSize: "1rem", boxSizing: "border-box" },
   btn: { width: "100%", padding: "0.8rem", background: "#e2b96f", color: "#1a1a2e", border: "none", borderRadius: "6px", fontSize: "1rem", fontWeight: 700, cursor: "pointer" },
+  divider: { display: "flex", alignItems: "center", margin: "1.25rem 0", color: "#555", fontSize: "0.8rem" },
+  dividerText: { margin: "0 auto" },
+  guestBtn: { width: "100%", padding: "0.75rem", background: "transparent", color: "#e2b96f", border: "1px solid #e2b96f", borderRadius: "6px", fontSize: "0.95rem", fontWeight: 600, cursor: "pointer" },
   error: { color: "#ff6b6b", marginBottom: "1rem", textAlign: "center" },
   link: { textAlign: "center", color: "#aaa", marginTop: "1rem" },
 };

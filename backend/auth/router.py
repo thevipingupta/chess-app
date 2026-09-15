@@ -1,5 +1,7 @@
 """Auth endpoints — register and login."""
 
+import secrets
+
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -42,6 +44,30 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.post("/guest", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+def guest_login(db: Session = Depends(get_db)):
+    """Creates a throwaway guest account and logs it in — no signup required."""
+    username = f"Guest_{secrets.token_hex(3).upper()}"
+    while db.query(User).filter(User.username == username).first():
+        username = f"Guest_{secrets.token_hex(3).upper()}"
+
+    user = User(
+        username=username,
+        email=f"{username.lower()}@guest.local",
+        password_hash=_hash(secrets.token_urlsafe(32)),
+    )
+    db.add(user)
+    db.flush()  # get user.id before committing
+
+    # Initialise puzzle rating, same as a real registration
+    db.add(UserRating(user_id=user.id))
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token({"sub": str(user.id)})
+    return LoginResponse(access_token=token, username=user.username)
 
 
 @router.post("/login", response_model=LoginResponse)

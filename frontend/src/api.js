@@ -33,6 +33,7 @@ export const authApi = {
     form.append("password", password);
     return api.post("/auth/login", form);
   },
+  guest: () => api.post("/auth/guest"),
 };
 
 export default api;
