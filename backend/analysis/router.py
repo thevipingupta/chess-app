@@ -204,11 +204,11 @@ async def _ocr_with_ollama(image_b64: str) -> str:
 
 
 async def _ocr_with_gemini(image_b64: str, mime_type: str) -> str:
-    """Call Gemini 2.0 Flash via REST and return the raw text response."""
+    """Call Gemini Flash via REST and return the raw text response."""
     import httpx
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-2.0-flash:generateContent?key={settings.gemini_api_key}"
+        f"gemini-flash-latest:generateContent?key={settings.gemini_api_key}"
     )
     payload = {
         "contents": [{
