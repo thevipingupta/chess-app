@@ -208,6 +208,12 @@ async def _ocr_with_ollama(image_b64: str) -> str:
     return resp.json()["message"]["content"].strip()
 
 
+@router.get("/ocr-status")
+def ocr_status():
+    """Returns whether OCR (local Ollama) is configured for this deployment."""
+    return {"available": bool(settings.ollama_base_url)}
+
+
 @router.post("/extract-pgn")
 async def extract_pgn_from_image(file: UploadFile = File(...)):
     """
