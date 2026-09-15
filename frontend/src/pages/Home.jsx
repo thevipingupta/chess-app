@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const username = localStorage.getItem("username") || "Player";
+  const isGuest = username.startsWith("Guest_");
   const navigate = useNavigate();
 
   const logout = () => {
@@ -18,6 +19,13 @@ export default function Home() {
           <button style={styles.logoutBtn} onClick={logout}>Logout</button>
         </div>
       </div>
+
+      {isGuest && (
+        <div style={styles.guestBanner}>
+          Playing as guest — your progress won't be saved.{" "}
+          <span style={styles.guestLink} onClick={() => navigate("/register")}>Sign up to keep it →</span>
+        </div>
+      )}
 
       <div style={styles.cards}>
         <div style={styles.card} onClick={() => navigate("/game")}>
@@ -52,6 +60,8 @@ const styles = {
   userRow: { display: "flex", alignItems: "center", gap: "1rem" },
   username: { color: "#aaa" },
   logoutBtn: { background: "transparent", border: "1px solid #555", color: "#aaa", padding: "0.4rem 1rem", borderRadius: "6px", cursor: "pointer" },
+  guestBanner: { background: "#1e3a5f55", border: "1px solid #60a5fa", borderRadius: "8px", padding: "0.7rem 1.1rem", color: "#93c5fd", fontSize: "0.9rem", textAlign: "center" },
+  guestLink: { color: "#e2b96f", fontWeight: 700, cursor: "pointer", textDecoration: "underline" },
   cards: { display: "flex", gap: "2rem", justifyContent: "center", marginTop: "4rem", flexWrap: "wrap" },
   card: { background: "#16213e", borderRadius: "16px", padding: "2.5rem", width: "300px", textAlign: "center", cursor: "pointer", transition: "transform 0.2s", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" },
   cardIcon: { fontSize: "4rem", marginBottom: "1rem" },
