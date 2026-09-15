@@ -80,17 +80,47 @@ function squareStyles(move) {
   };
 }
 
+// ── Voice: convert SAN to natural speech ────────────────────────────────────
+function speakableSan(san) {
+  if (san === "O-O")   return "castles kingside";
+  if (san === "O-O-O") return "castles queenside";
+  return san
+    .replace(/^N/, "Knight ").replace(/^B/, "Bishop ").replace(/^R/, "Rook ")
+    .replace(/^Q/, "Queen ") .replace(/^K/, "King ")
+    .replace(/x/, " takes ")
+    .replace(/\+/, ", check").replace(/#/, ", checkmate")
+    .replace(/=Q/, ", promotes to Queen").replace(/=R/, ", promotes to Rook")
+    .replace(/=B/, ", promotes to Bishop").replace(/=N/, ", promotes to Knight");
+}
+
 export default function Analyze() {
   const navigate  = useNavigate();
   const fileRef   = useRef(null);
 
-  const [pgnText,   setPgnText]   = useState("");
-  const [loading,   setLoading]   = useState(false);
-  const [error,     setError]     = useState("");
-  const [result,   setResult]   = useState(null);
-  const [cursor,   setCursor]   = useState(-1);
-  const [boardFen, setBoardFen] = useState(STARTING_FEN);
-  const fensRef = useRef([STARTING_FEN]);  // ref — always current, no async lag
+  const [pgnText,      setPgnText]      = useState("");
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState("");
+  const [result,       setResult]       = useState(null);
+  const [cursor,       setCursor]       = useState(-1);
+  const [boardFen,     setBoardFen]     = useState(STARTING_FEN);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const fensRef    = useRef([STARTING_FEN]);  // ref — always current, no async lag
+  const voiceRef   = useRef(true);            // mirrors voiceEnabled, readable in callbacks
+
+  // ── Speak a phrase via Web Speech API ───────────────────────────────────────
+  const speak = useCallback((text) => {
+    if (!voiceRef.current || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();                   // stop any ongoing utterance
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate  = 1.1;
+    u.pitch = 1;
+    window.speechSynthesis.speak(u);
+  }, []);
+
+  const toggleVoice = () => {
+    setVoiceEnabled(v => { voiceRef.current = !v; return !v; });
+    window.speechSynthesis?.cancel();
+  };
 
   // Build FEN array into ref the moment result arrives, reset board to start
   useEffect(() => {
@@ -104,13 +134,21 @@ export default function Analyze() {
     setBoardFen(STARTING_FEN);
   }, [result]);
 
-  // Single navigation function — updates cursor + boardFen atomically
+  // Single navigation function — updates cursor + boardFen atomically + speaks
   const stepTo = useCallback((next) => {
     const total = result?.moves?.length ?? 0;
     const clamped = Math.max(-1, Math.min(total - 1, next));
     setCursor(clamped);
     setBoardFen(fensRef.current[clamped + 1] ?? STARTING_FEN);
-  }, [result]);
+    // Voice
+    if (clamped === -1) {
+      speak("Starting position");
+    } else {
+      const move = result.moves[clamped];
+      const side = move.side === "white" ? "White" : "Black";
+      speak(`${side} ${speakableSan(move.san)}`);
+    }
+  }, [result, speak]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -256,6 +294,13 @@ export default function Analyze() {
               </span>
               <button style={s.navBtn} onClick={() => stepTo(cursor + 1)} title="Next (→)">▶</button>
               <button style={s.navBtn} onClick={() => stepTo(result.moves.length - 1)} title="End">⏭</button>
+              <button
+                style={{ ...s.navBtn, opacity: voiceEnabled ? 1 : 0.4, fontSize: "1.1rem" }}
+                onClick={toggleVoice}
+                title={voiceEnabled ? "Voice on — click to mute" : "Voice off — click to unmute"}
+              >
+                {voiceEnabled ? "🔊" : "🔇"}
+              </button>
             </div>
 
             {/* New analysis button */}
