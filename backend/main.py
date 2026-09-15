@@ -53,5 +53,8 @@ if _DIST.exists():
 
     @app.get("/{full_path:path}")
     async def _serve_spa(full_path: str):
-        """Catch-all: serve index.html so React Router handles client-side routing."""
+        """Serve a real file if it exists (e.g. bishop.png), otherwise hand off to React Router."""
+        candidate = _DIST / full_path
+        if candidate.is_file():
+            return FileResponse(str(candidate))
         return FileResponse(str(_DIST / "index.html"))
