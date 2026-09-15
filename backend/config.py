@@ -14,9 +14,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 480   # 8 hours
     database_url: str = "sqlite:///./chess.db"
     stockfish_path: str = "stockfish"
-    # OCR / Vision — uses local Ollama (e.g. llava). Not available on Railway.
-    ollama_base_url: str = ""       # e.g. http://localhost:11434
+    # OCR / Vision — Ollama for local dev, Gemini Flash as Railway fallback
+    ollama_base_url: str = ""       # e.g. http://localhost:11434  (local only)
     ollama_model:    str = "llava"  # any Ollama vision model you have pulled
+    gemini_api_key:  str = ""       # Google AI Studio free key (works on Railway)
 
     model_config = {"env_file": str(_ENV_FILE)}
 

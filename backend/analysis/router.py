@@ -191,15 +191,10 @@ def _strip_fences(text: str) -> str:
 async def _ocr_with_ollama(image_b64: str) -> str:
     """Call a local Ollama vision model and return the raw text response."""
     import httpx
-
     url = f"{settings.ollama_base_url.rstrip('/')}/api/chat"
     payload = {
         "model": settings.ollama_model,
-        "messages": [{
-            "role": "user",
-            "content": _OCR_PROMPT,
-            "images": [image_b64],   # Ollama expects raw base64, no data-URI prefix
-        }],
+        "messages": [{"role": "user", "content": _OCR_PROMPT, "images": [image_b64]}],
         "stream": False,
     }
     async with httpx.AsyncClient(timeout=120.0) as client:
@@ -208,29 +203,50 @@ async def _ocr_with_ollama(image_b64: str) -> str:
     return resp.json()["message"]["content"].strip()
 
 
+async def _ocr_with_gemini(image_b64: str, mime_type: str) -> str:
+    """Call Gemini 2.0 Flash via REST and return the raw text response."""
+    import httpx
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.0-flash:generateContent?key={settings.gemini_api_key}"
+    )
+    payload = {
+        "contents": [{
+            "parts": [
+                {"inline_data": {"mime_type": mime_type, "data": image_b64}},
+                {"text": _OCR_PROMPT},
+            ]
+        }]
+    }
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        resp = await client.post(url, json=payload)
+        resp.raise_for_status()
+    return resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+
 @router.get("/ocr-status")
 def ocr_status():
-    """Returns whether OCR (local Ollama) is configured for this deployment."""
-    return {"available": bool(settings.ollama_base_url)}
+    """Returns whether OCR is available (Ollama locally or Gemini on Railway)."""
+    return {"available": bool(settings.ollama_base_url or settings.gemini_api_key)}
 
 
 @router.post("/extract-pgn")
 async def extract_pgn_from_image(file: UploadFile = File(...)):
     """
-    Accept an image (PNG/JPEG/WEBP) or PDF, extract chess notation using a
-    local Ollama vision model (e.g. llava), and return clean PGN text.
+    Accept an image (PNG/JPEG/WEBP) or PDF and extract chess notation.
 
-    Requires OLLAMA_BASE_URL to be set in .env (e.g. http://localhost:11434).
-    This endpoint works locally only — Railway cannot reach a local Ollama.
+    Backend priority:
+      1. Ollama  — used when OLLAMA_BASE_URL is set (local dev)
+      2. Gemini  — used when GEMINI_API_KEY is set (Railway / any cloud)
     """
-    # ── Guard: Ollama configured? ─────────────────────────────────────────────
-    if not settings.ollama_base_url:
+    # ── Guard: any vision backend configured? ─────────────────────────────────
+    if not settings.ollama_base_url and not settings.gemini_api_key:
         raise HTTPException(
             status_code=503,
             detail=(
-                "OCR requires a local Ollama instance. "
-                "Set OLLAMA_BASE_URL=http://localhost:11434 in your .env, "
-                "and make sure you have pulled a vision model: ollama pull llava"
+                "No OCR backend configured. "
+                "Local: set OLLAMA_BASE_URL + run `ollama pull llava`. "
+                "Railway: set GEMINI_API_KEY (free at aistudio.google.com)."
             ),
         )
 
@@ -244,7 +260,7 @@ async def extract_pgn_from_image(file: UploadFile = File(...)):
 
     # ── Read file ─────────────────────────────────────────────────────────────
     raw = await file.read()
-    if len(raw) > 20 * 1024 * 1024:  # 20 MB cap
+    if len(raw) > 20 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="File too large (max 20 MB)")
 
     # ── PDF → PNG ─────────────────────────────────────────────────────────────
@@ -252,17 +268,20 @@ async def extract_pgn_from_image(file: UploadFile = File(...)):
         raw = _pdf_first_page_to_png(raw)
         content_type = "image/png"
 
-    # ── Encode to base64 ──────────────────────────────────────────────────────
+    if content_type == "image/jpg":
+        content_type = "image/jpeg"
+
     image_b64 = base64.standard_b64encode(raw).decode()
 
-    # ── Call Ollama vision ────────────────────────────────────────────────────
+    # ── Call vision backend (Ollama preferred, Gemini fallback) ───────────────
     try:
-        pgn_text = await _ocr_with_ollama(image_b64)
+        if settings.ollama_base_url:
+            pgn_text = await _ocr_with_ollama(image_b64)
+        else:
+            pgn_text = await _ocr_with_gemini(image_b64, content_type)
     except Exception as exc:
-        logger.exception("Ollama OCR call failed")
-        raise HTTPException(
-            status_code=502,
-            detail=f"Ollama error: {exc}. Is Ollama running? Does it have a vision model?",
-        )
+        logger.exception("OCR vision call failed")
+        backend = "Ollama" if settings.ollama_base_url else "Gemini"
+        raise HTTPException(status_code=502, detail=f"{backend} OCR error: {exc}")
 
     return {"pgn": _strip_fences(pgn_text)}
