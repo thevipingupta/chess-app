@@ -13,8 +13,18 @@ const DIFFICULTIES = [
   { level: 20, label: "Grandmaster" },
 ];
 
-// Preset time controls in minutes (0 = no limit)
-const TIME_PRESETS = [0, 1, 2, 3, 5, 10, 15, 30];
+// Preset time controls — base minutes + Fischer increment in seconds (0 = no limit / no increment)
+const TIME_PRESETS = [
+  { minutes: 0,  increment: 0,  label: "No Time" },
+  { minutes: 1,  increment: 0,  label: "1m" },
+  { minutes: 2,  increment: 0,  label: "2m" },
+  { minutes: 3,  increment: 0,  label: "3m" },
+  { minutes: 5,  increment: 0,  label: "5m" },
+  { minutes: 10, increment: 0,  label: "10m" },
+  { minutes: 5,  increment: 3,  label: "5+3" },
+  { minutes: 10, increment: 5,  label: "10+5" },
+  { minutes: 15, increment: 10, label: "15+10" },
+];
 
 // Pause between showing the player's move and revealing the computer's reply,
 // so the reply doesn't land in the same instant and go unnoticed.
@@ -118,7 +128,8 @@ export default function Game() {
   const [hintSquares, setHintSquares] = useState({});
 
   // Time control
-  const [selectedMinutes, setSelectedMinutes] = useState(5);
+  const [selectedMinutes, setSelectedMinutes]     = useState(5);
+  const [selectedIncrement, setSelectedIncrement] = useState(0);
   const [customInput, setCustomInput]         = useState("");
   const [useCustom, setUseCustom]             = useState(false);
   const [playerTime, setPlayerTime]           = useState(null);
@@ -130,6 +141,38 @@ export default function Game() {
   const [analysis, setAnalysis]         = useState(null);
   const [analyzing, setAnalyzing]       = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+
+  // Coach Mode — local-only (Ollama), silently unavailable unless the
+  // backend has OLLAMA_BASE_URL configured
+  const [coachAvailable, setCoachAvailable]     = useState(false);
+  const [coachMode, setCoachMode]               = useState(false);
+  const [coachVoiceEnabled, setCoachVoiceEnabled] = useState(true);
+  const [coachPlayerMsg, setCoachPlayerMsg]     = useState("");
+  const [coachComputerMsg, setCoachComputerMsg] = useState("");
+  const coachVoiceRef = useRef(true);
+
+  useEffect(() => {
+    api.get("/game/coach-status")
+      .then(res => setCoachAvailable(!!res.data.available))
+      .catch(() => setCoachAvailable(false));
+  }, []);
+
+  // Distinct voice styling from any other narrator in the app — a slightly
+  // deeper, more deliberate pace, so the coach reads as its own persona.
+  // Not modeled on, or attributed to, any real person.
+  const speakCoach = useCallback((text) => {
+    if (!coachVoiceRef.current || !window.speechSynthesis || !text) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate  = 0.95;
+    u.pitch = 0.8;
+    window.speechSynthesis.speak(u);
+  }, []);
+
+  const toggleCoachVoice = () => {
+    setCoachVoiceEnabled(v => { coachVoiceRef.current = !v; return !v; });
+    window.speechSynthesis?.cancel();
+  };
 
   // Post-game review — step through the finished game move by move
   const [reviewCursor, setReviewCursor] = useState(-1);
@@ -211,6 +254,8 @@ export default function Game() {
     setPlayerTime(null);
     setComputerTime(null);
     setError("");
+    setCoachPlayerMsg("");
+    setCoachComputerMsg("");
   };
 
   const startGame = async () => {
@@ -223,6 +268,8 @@ export default function Game() {
     setTakeBackUsed(false);
     setHintsLeft(5);
     setHintSquares({});
+    setCoachPlayerMsg("");
+    setCoachComputerMsg("");
     const secs = getTimeSeconds();
     try {
       const { data } = await api.post("/game/new", { difficulty });
@@ -251,14 +298,28 @@ export default function Game() {
     setError("");
     setSelectedSq(null);
     setOptionSquares({});
+    setCoachPlayerMsg("");
+    setCoachComputerMsg("");
     try {
-      const { data } = await api.post(`/game/${gameId}/move`, { move });
-      // Deduct actual elapsed time from computer clock (min 1s so it always moves)
+      const { data } = await api.post(`/game/${gameId}/move`, { move, coach: coachMode });
+      // Player's Fischer increment — added the moment their move is confirmed
+      if (selectedIncrement > 0) {
+        setPlayerTime(t => t === null ? null : t + selectedIncrement);
+      }
+      // Deduct actual elapsed time from computer clock (min 1s so it always moves),
+      // then add its own increment for the move it just made
       if (data.computer_move && thinkingStartRef.current) {
         const elapsed = Math.max(1, Math.round((Date.now() - thinkingStartRef.current) / 1000));
-        setComputerTime(t => t === null ? null : Math.max(0, t - elapsed));
+        setComputerTime(t => t === null ? null : Math.max(0, t - elapsed) + selectedIncrement);
       }
       playMoveSound();
+
+      // Reveal the player's own coach feedback right away — it's about the
+      // move they just made, no need to wait for the computer's reply.
+      if (data.coach_player) {
+        setCoachPlayerMsg(data.coach_player);
+        speakCoach(data.coach_player);
+      }
 
       // Reveal the player's own move first, then pause briefly before showing
       // the computer's reply — both land in the same API response, so without
@@ -274,6 +335,10 @@ export default function Game() {
         }
         await new Promise(res => setTimeout(res, COMPUTER_MOVE_DELAY_MS));
         playOpponentMoveSound();
+        if (data.coach_computer) {
+          setCoachComputerMsg(data.coach_computer);
+          speakCoach(data.coach_computer);
+        }
       }
 
       setFen(data.fen);
@@ -292,7 +357,7 @@ export default function Game() {
     } finally {
       setThinking(false);
     }
-  }, [gameId, gameOver, thinking, localChess, fen]);
+  }, [gameId, gameOver, thinking, localChess, fen, selectedIncrement, coachMode, speakCoach]);
 
   // ── Click-to-move ────────────────────────────────────────────────────────
   const onSquareClick = useCallback(({ square }) => {
@@ -482,6 +547,23 @@ export default function Game() {
           ) : (
             <p style={s.hint}>Click a piece to select, then click the destination</p>
           )}
+
+          {coachMode && (coachPlayerMsg || coachComputerMsg) && (
+            <div style={s.coachPanel}>
+              <div style={s.coachHeader}>
+                <span>🧑‍🏫 Coach</span>
+                <button
+                  style={s.coachMuteBtn}
+                  onClick={toggleCoachVoice}
+                  title={coachVoiceEnabled ? "Voice on — click to mute" : "Voice off — click to unmute"}
+                >
+                  {coachVoiceEnabled ? "🔊" : "🔇"}
+                </button>
+              </div>
+              {coachPlayerMsg && <p style={s.coachLine}><strong>You:</strong> {coachPlayerMsg}</p>}
+              {coachComputerMsg && <p style={s.coachLine}><strong>Computer:</strong> {coachComputerMsg}</p>}
+            </div>
+          )}
         </div>
 
         {/* ── Right: controls ── */}
@@ -526,16 +608,16 @@ export default function Game() {
           <div style={s.block}>
             <p style={s.label}>Time per Player</p>
             <div style={s.timeRow}>
-              {TIME_PRESETS.map(m => (
-                <button key={m}
-                  style={{ ...s.timeBtn, ...(!useCustom && selectedMinutes === m ? s.timeActive : {}) }}
-                  onClick={() => { setSelectedMinutes(m); setUseCustom(false); }}
+              {TIME_PRESETS.map(p => (
+                <button key={p.label}
+                  style={{ ...s.timeBtn, ...(!useCustom && selectedMinutes === p.minutes && selectedIncrement === p.increment ? s.timeActive : {}) }}
+                  onClick={() => { setSelectedMinutes(p.minutes); setSelectedIncrement(p.increment); setUseCustom(false); }}
                   disabled={activeGame}
-                >{m === 0 ? "No Time" : `${m}m`}</button>
+                >{p.label}</button>
               ))}
               <button
                 style={{ ...s.timeBtn, ...(useCustom ? s.timeActive : {}), minWidth: "52px" }}
-                onClick={() => setUseCustom(true)}
+                onClick={() => { setUseCustom(true); setSelectedIncrement(0); }}
                 disabled={activeGame}
               >Custom</button>
             </div>
@@ -553,6 +635,22 @@ export default function Game() {
               </div>
             )}
           </div>
+
+          {/* Coach Mode — local-only, hidden entirely if Ollama isn't configured */}
+          {coachAvailable && (
+            <div style={s.block}>
+              <p style={s.label}>Coach Mode</p>
+              <label style={s.coachToggleRow}>
+                <input
+                  type="checkbox"
+                  checked={coachMode}
+                  onChange={e => setCoachMode(e.target.checked)}
+                  disabled={activeGame}
+                />
+                <span>🧑‍🏫 Get feedback after each move (local Ollama)</span>
+              </label>
+            </div>
+          )}
 
           {/* Start / Play Again */}
           {(!gameId || gameOver) && (
@@ -696,6 +794,11 @@ const s = {
   clockCellTime:    { fontFamily: "monospace", fontSize: "1.05rem", fontWeight: 700, letterSpacing: "0.04em" },
 
   hint:        { margin: 0, textAlign: "center", fontSize: "0.72rem", color: "#475569" },
+  coachPanel:     { width: "580px", boxSizing: "border-box", background: "#1e3a5f55", border: "1px solid #60a5fa", borderRadius: "8px", padding: "0.6rem 0.9rem" },
+  coachHeader:    { display: "flex", justifyContent: "space-between", alignItems: "center", color: "#93c5fd", fontWeight: 700, fontSize: "0.8rem", marginBottom: "0.3rem" },
+  coachMuteBtn:   { background: "transparent", border: "none", cursor: "pointer", fontSize: "0.95rem" },
+  coachLine:      { margin: "0.15rem 0", color: "#cbd5e1", fontSize: "0.82rem", lineHeight: 1.4 },
+  coachToggleRow: { display: "flex", alignItems: "center", gap: "0.5rem", color: "#94a3b8", fontSize: "0.82rem", cursor: "pointer" },
   reviewRow:      { display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", width: "580px" },
   navBtn:         { background: "#16213e", border: "1px solid #2a3a5a", color: "#e2b96f", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "1rem" },
   reviewCounter:  { color: "#94a3b8", fontSize: "0.85rem", minWidth: "150px", textAlign: "center" },
