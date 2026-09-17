@@ -70,6 +70,20 @@ function reviewSquareStyles(uci) {
   };
 }
 
+function AnalysisCell({ move, active, onClick }) {
+  const meta = CLASS_META[move.classification];
+  return (
+    <button
+      style={{ ...s.analysisCell, ...(active ? { ...s.analysisCellActive, borderColor: meta.color } : {}) }}
+      onClick={onClick}
+      title={`${meta.label}${move.cp_loss > 0 ? ` · −${move.cp_loss}cp` : ""}${!move.is_best ? ` · best: ${move.best_move}` : ""}`}
+    >
+      <span style={{ color: meta.color, fontSize: "0.7rem" }}>{meta.icon}</span>
+      <span style={{ color: meta.color }}>{move.uci}</span>
+    </button>
+  );
+}
+
 function fmtTime(secs) {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
@@ -629,18 +643,22 @@ export default function Game() {
                       ))}
                     </div>
                   </div>
-                  <div style={s.analysisList}>
-                    {analysis.moves.map(m => {
-                      const meta = CLASS_META[m.classification];
+                  <div style={s.analysisTable}>
+                    <div style={s.analysisTableHeader}>
+                      <span style={s.moveNum}></span>
+                      <span style={s.analysisTableHeaderCell}>White</span>
+                      <span style={s.analysisTableHeaderCell}>Black</span>
+                    </div>
+                    {Array.from({ length: Math.ceil(analysis.moves.length / 2) }, (_, pairIdx) => {
+                      const wMove = analysis.moves[pairIdx * 2];
+                      const bMove = analysis.moves[pairIdx * 2 + 1];
                       return (
-                        <div key={m.move_num} style={s.analysisRow}>
-                          <span style={s.moveNum}>{m.move_num}.</span>
-                          <span style={{ ...s.moveUci, color: meta.color }}>{m.uci}</span>
-                          <span style={{ ...s.classBadge, background: meta.color + "22", color: meta.color }}>
-                            {meta.icon} {meta.label}
-                          </span>
-                          {!m.is_best && <span style={s.bestMove}>best: {m.best_move}</span>}
-                          <span style={s.cpLoss}>−{m.cp_loss}cp</span>
+                        <div key={pairIdx} style={s.analysisPairRow}>
+                          <span style={s.moveNum}>{wMove.move_num}.</span>
+                          <AnalysisCell move={wMove} active={reviewCursor === pairIdx * 2} onClick={() => stepTo(pairIdx * 2)} />
+                          {bMove
+                            ? <AnalysisCell move={bMove} active={reviewCursor === pairIdx * 2 + 1} onClick={() => stepTo(pairIdx * 2 + 1)} />
+                            : <span style={s.analysisCellEmpty}>—</span>}
                         </div>
                       );
                     })}
@@ -715,11 +733,13 @@ const s = {
   summaryGrid: { display: "flex", flexWrap: "wrap", gap: "6px 12px" },
   summaryItem: { display: "flex", flexDirection: "column", alignItems: "center", fontSize: "0.75rem" },
   summaryKey:  { color: "#64748b", fontSize: "0.65rem" },
-  analysisList:{ background: "#0d1e3a", borderRadius: "6px", padding: "8px", maxHeight: "300px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "4px" },
-  analysisRow: { display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", padding: "3px 0", borderBottom: "1px solid #1e2d4a" },
   moveNum:     { color: "#475569", minWidth: "20px", fontFamily: "monospace" },
-  moveUci:     { fontWeight: 700, fontFamily: "monospace", minWidth: "36px" },
-  classBadge:  { padding: "1px 6px", borderRadius: "4px", fontSize: "0.72rem", fontWeight: 600, whiteSpace: "nowrap" },
-  bestMove:    { color: "#475569", fontSize: "0.7rem", fontFamily: "monospace", flex: 1 },
-  cpLoss:      { color: "#475569", fontSize: "0.7rem", fontFamily: "monospace", marginLeft: "auto" },
+
+  analysisTable:          { background: "#0d1e3a", borderRadius: "6px", padding: "8px", maxHeight: "320px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "4px" },
+  analysisTableHeader:    { display: "flex", alignItems: "center", gap: "6px", padding: "0 0 4px", borderBottom: "1px solid #1e2d4a" },
+  analysisTableHeaderCell:{ flex: 1, color: "#64748b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em" },
+  analysisPairRow:        { display: "flex", alignItems: "center", gap: "6px", padding: "2px 0" },
+  analysisCell:           { flex: 1, display: "flex", alignItems: "center", gap: "5px", background: "transparent", border: "1px solid transparent", borderRadius: "5px", padding: "3px 8px", cursor: "pointer", fontSize: "0.8rem", fontFamily: "monospace" },
+  analysisCellActive:     { background: "#1a1a2e" },
+  analysisCellEmpty:      { flex: 1, color: "#334155", fontSize: "0.8rem", padding: "3px 8px" },
 };

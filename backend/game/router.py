@@ -255,12 +255,16 @@ def analyze(
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
 
+    # Accuracy reflects the player's own (White's) moves only — the computer's
+    # moves are included in `move_analysis` for the table, but shouldn't be
+    # blended into the player's accuracy score.
     counts = {"best": 0, "excellent": 0, "good": 0,
               "inaccuracy": 0, "mistake": 0, "blunder": 0}
-    for m in move_analysis:
+    player_moves = [m for m in move_analysis if m["side"] == "white"]
+    for m in player_moves:
         counts[m["classification"]] += 1
 
-    total = len(move_analysis)
+    total = len(player_moves)
     accuracy = round(
         100 * (counts["best"] + counts["excellent"] + counts["good"]) / total, 1
     ) if total else 0.0

@@ -83,9 +83,9 @@ def _classify(cp_loss: int, is_best: bool) -> str:
 
 
 def analyze_game(moves: list[str], time_per_move: float = 0.15) -> list[dict]:
-    """Analyse each player (White) move using Stockfish.
+    """Analyse every move (both colours) using Stockfish.
 
-    Returns a list of dicts — one per player move — with classification,
+    Returns a list of dicts — one per ply — with side, classification,
     centipawn loss, best move suggestion, and eval before/after.
     """
     board = chess.Board()
@@ -95,40 +95,40 @@ def analyze_game(moves: list[str], time_per_move: float = 0.15) -> list[dict]:
         with chess.engine.SimpleEngine.popen_uci(settings.stockfish_path) as engine:
             for i, uci in enumerate(moves):
                 move = chess.Move.from_uci(uci)
-                is_player = (i % 2 == 0)   # player is White, moves on even indices
+                side = "white" if i % 2 == 0 else "black"
 
-                if is_player:
-                    # Evaluate BEFORE the move
-                    info_pre = engine.analyse(
-                        board, chess.engine.Limit(time=time_per_move)
-                    )
-                    score_pre = info_pre["score"].white().score(mate_score=10000)
-                    pv = info_pre.get("pv") or []
-                    best_uci = pv[0].uci() if pv else uci
+                # Eval BEFORE the move (always from White's POV)
+                info_pre = engine.analyse(board, chess.engine.Limit(time=time_per_move))
+                score_pre = info_pre["score"].white().score(mate_score=10000)
+                pv = info_pre.get("pv") or []
+                best_uci = pv[0].uci() if pv else uci
 
-                    board.push(move)
+                board.push(move)
 
-                    # Evaluate AFTER the move
-                    info_post = engine.analyse(
-                        board, chess.engine.Limit(time=time_per_move)
-                    )
-                    score_post = info_post["score"].white().score(mate_score=10000)
+                # Eval AFTER the move
+                info_post = engine.analyse(board, chess.engine.Limit(time=time_per_move))
+                score_post = info_post["score"].white().score(mate_score=10000)
 
+                if score_pre is None or score_post is None:
+                    cp_loss = 0
+                elif side == "white":
                     cp_loss = max(0, score_pre - score_post)
-                    is_best = (best_uci == uci)
-
-                    results.append({
-                        "move_num":       (i // 2) + 1,
-                        "uci":            uci,
-                        "best_move":      best_uci,
-                        "is_best":        is_best,
-                        "cp_loss":        cp_loss,
-                        "classification": _classify(cp_loss, is_best),
-                        "eval_before":    score_pre,
-                        "eval_after":     score_post,
-                    })
                 else:
-                    board.push(move)
+                    cp_loss = max(0, score_post - score_pre)
+
+                is_best = (best_uci == uci)
+
+                results.append({
+                    "move_num":       (i // 2) + 1,
+                    "side":           side,
+                    "uci":            uci,
+                    "best_move":      best_uci,
+                    "is_best":        is_best,
+                    "cp_loss":        cp_loss,
+                    "classification": _classify(cp_loss, is_best),
+                    "eval_before":    score_pre,
+                    "eval_after":     score_post,
+                })
 
     except FileNotFoundError:
         logger.error("Stockfish binary not found at: %s", settings.stockfish_path)
