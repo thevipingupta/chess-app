@@ -78,8 +78,11 @@ function AnalysisCell({ move, active, onClick }) {
       onClick={onClick}
       title={`${meta.label}${move.cp_loss > 0 ? ` · −${move.cp_loss}cp` : ""}${!move.is_best ? ` · best: ${move.best_move}` : ""}`}
     >
-      <span style={{ color: meta.color, fontSize: "0.7rem" }}>{meta.icon}</span>
-      <span style={{ color: meta.color }}>{move.uci}</span>
+      <span style={s.analysisCellMain}>
+        <span style={{ color: meta.color, fontSize: "0.7rem" }}>{meta.icon}</span>
+        <span style={{ color: meta.color }}>{move.uci}</span>
+      </span>
+      {!move.is_best && <span style={s.analysisCellBest}>best: {move.best_move}</span>}
     </button>
   );
 }
@@ -739,7 +742,9 @@ const s = {
   analysisTableHeader:    { display: "flex", alignItems: "center", gap: "6px", padding: "0 0 4px", borderBottom: "1px solid #1e2d4a" },
   analysisTableHeaderCell:{ flex: 1, color: "#64748b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em" },
   analysisPairRow:        { display: "flex", alignItems: "center", gap: "6px", padding: "2px 0" },
-  analysisCell:           { flex: 1, display: "flex", alignItems: "center", gap: "5px", background: "transparent", border: "1px solid transparent", borderRadius: "5px", padding: "3px 8px", cursor: "pointer", fontSize: "0.8rem", fontFamily: "monospace" },
+  analysisCell:           { flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "1px", background: "transparent", border: "1px solid transparent", borderRadius: "5px", padding: "3px 8px", cursor: "pointer", fontSize: "0.8rem", fontFamily: "monospace" },
+  analysisCellMain:       { display: "flex", alignItems: "center", gap: "5px" },
+  analysisCellBest:       { color: "#475569", fontSize: "0.62rem", fontFamily: "monospace" },
   analysisCellActive:     { background: "#1a1a2e" },
   analysisCellEmpty:      { flex: 1, color: "#334155", fontSize: "0.8rem", padding: "3px 8px" },
 };
