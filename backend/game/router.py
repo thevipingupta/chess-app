@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from backend.auth.jwt import get_current_user_id
 from backend.config import settings
 from backend.database import get_db
-from backend.game.engine import analyze_game, apply_moves, board_status, get_computer_move
+from backend.game.engine import analyze_game, apply_moves, board_status, evaluate_move, get_computer_move
 from backend.game.schemas import (
     GameStateResponse,
     MoveRequest,
@@ -22,6 +22,57 @@ from backend.models.game import GameSession
 
 router = APIRouter(prefix="/game", tags=["game"])
 logger = logging.getLogger(__name__)
+
+
+# ── Coach Mode — local-only narration via Ollama ─────────────────────────────
+
+_COACH_SYSTEM = """\
+You are a warm, encouraging chess coach helping a beginner learn from their game.
+You will be given objective facts about one move from a chess engine. Using ONLY
+those facts, write exactly one or two short, friendly sentences explaining the
+move to the player in plain language. Do not invent tactical details, lines, or
+threats that are not stated in the facts. If it was a strong move, briefly say
+what it accomplishes in general chess terms (development, center control, king
+safety, etc). If it lost value, name the general kind of mistake (e.g. hanging a
+piece, missing a tactic, weakening king safety) without fabricating specifics."""
+
+
+def _coach_prompt(move_eval: dict) -> str:
+    side_label = "White (the player)" if move_eval["side"] == "white" else "Black (the computer)"
+    lines = [
+        f"Side: {side_label}",
+        f"Move played: {move_eval['san']}",
+        f"Engine verdict: {move_eval['classification']} (centipawn loss: {move_eval['cp_loss']})",
+    ]
+    if move_eval["is_best"]:
+        lines.append("This was the engine's top choice in this position.")
+    else:
+        lines.append(f"The engine's preferred move instead was {move_eval['best_move']}.")
+    return "\n".join(lines)
+
+
+async def _coach_narrate(move_eval: dict) -> str:
+    """Call local Ollama to narrate one move's evaluation in plain language."""
+    import httpx
+    url = f"{settings.ollama_base_url.rstrip('/')}/api/chat"
+    payload = {
+        "model": settings.ollama_model,
+        "messages": [
+            {"role": "system", "content": _COACH_SYSTEM},
+            {"role": "user", "content": _coach_prompt(move_eval)},
+        ],
+        "stream": False,
+    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(url, json=payload)
+        resp.raise_for_status()
+    return resp.json()["message"]["content"].strip()
+
+
+@router.get("/coach-status")
+def coach_status():
+    """Returns whether Coach Mode (local Ollama) is available on this deployment."""
+    return {"available": bool(settings.ollama_base_url)}
 
 
 @router.post("/new", response_model=NewGameResponse)
@@ -49,7 +100,7 @@ def new_game(
 
 
 @router.post("/{game_id}/move", response_model=MoveResponse)
-def make_move(
+async def make_move(
     game_id: int,
     req: MoveRequest,
     user_id: int = Depends(get_current_user_id),
@@ -67,6 +118,7 @@ def make_move(
     # Reconstruct board from stored moves
     moves = session.pgn.split() if session.pgn else []
     board = apply_moves(moves)
+    pre_player_fen = board.fen()
 
     # Validate and apply player's move
     try:
@@ -78,6 +130,7 @@ def make_move(
         raise HTTPException(status_code=400, detail=f"Invalid move format: {req.move}")
 
     moves.append(req.move)
+    pre_computer_fen = board.fen()
 
     # Check game state after player's move
     status, game_over, winner = board_status(board)
@@ -101,6 +154,19 @@ def make_move(
         session.result = winner or "draw"
     db.commit()
 
+    # Coach Mode — best-effort narration; never let it break the move itself
+    coach_player = None
+    coach_computer = None
+    if req.coach and settings.ollama_base_url:
+        try:
+            player_eval = evaluate_move(pre_player_fen, req.move, "white")
+            coach_player = await _coach_narrate(player_eval)
+            if computer_move_uci:
+                computer_eval = evaluate_move(pre_computer_fen, computer_move_uci, "black")
+                coach_computer = await _coach_narrate(computer_eval)
+        except Exception:
+            logger.exception("Coach narration failed")
+
     return MoveResponse(
         fen=board.fen(),
         player_move=req.move,
@@ -108,6 +174,8 @@ def make_move(
         status=status,
         game_over=game_over,
         winner=winner,
+        coach_player=coach_player,
+        coach_computer=coach_computer,
     )
 
 

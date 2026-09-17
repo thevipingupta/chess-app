@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 480   # 8 hours
     database_url: str = "sqlite:///./chess.db"
     stockfish_path: str = "stockfish"
+    # Coach Mode — local-only narration via Ollama; silently unavailable if unset
+    ollama_base_url: str = ""            # e.g. http://localhost:11434
+    ollama_model:    str = "llama3.1"    # any Ollama text model you have pulled
 
     model_config = {"env_file": str(_ENV_FILE)}
 

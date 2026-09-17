@@ -138,3 +138,47 @@ def analyze_game(moves: list[str], time_per_move: float = 0.15) -> list[dict]:
         )
 
     return results
+
+
+def evaluate_move(pre_fen: str, uci: str, side: str, time_per_move: float = 0.15) -> dict:
+    """Evaluate a single move live, right after it's played (used by Coach Mode).
+
+    Same classification logic as analyze_game, but for one move at a time
+    against a known "before" position, rather than replaying a whole game.
+    """
+    board = chess.Board(pre_fen)
+    move = chess.Move.from_uci(uci)
+    san = board.san(move)
+
+    try:
+        with chess.engine.SimpleEngine.popen_uci(settings.stockfish_path) as engine:
+            info_pre = engine.analyse(board, chess.engine.Limit(time=time_per_move))
+            score_pre = info_pre["score"].white().score(mate_score=10000)
+            pv = info_pre.get("pv") or []
+            best_uci = pv[0].uci() if pv else uci
+
+            board.push(move)
+
+            info_post = engine.analyse(board, chess.engine.Limit(time=time_per_move))
+            score_post = info_post["score"].white().score(mate_score=10000)
+    except FileNotFoundError:
+        logger.error("Stockfish binary not found at: %s", settings.stockfish_path)
+        raise RuntimeError(f"Stockfish not found at {settings.stockfish_path}")
+
+    if score_pre is None or score_post is None:
+        cp_loss = 0
+    elif side == "white":
+        cp_loss = max(0, score_pre - score_post)
+    else:
+        cp_loss = max(0, score_post - score_pre)
+
+    is_best = (best_uci == uci)
+    return {
+        "san":            san,
+        "uci":            uci,
+        "side":           side,
+        "best_move":      best_uci,
+        "is_best":        is_best,
+        "cp_loss":        cp_loss,
+        "classification": _classify(cp_loss, is_best),
+    }

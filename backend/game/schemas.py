@@ -15,6 +15,7 @@ class NewGameResponse(BaseModel):
 
 class MoveRequest(BaseModel):
     move: str                    # UCI format e.g. "e2e4"
+    coach: bool = False          # Coach Mode — narrate this move via Ollama
 
 
 class MoveResponse(BaseModel):
@@ -24,6 +25,8 @@ class MoveResponse(BaseModel):
     status: str                  # "ok" | "check" | "checkmate" | "stalemate" | "draw"
     game_over: bool
     winner: str | None           # "white" | "black" | "draw" | None
+    coach_player: str | None = None    # narrated feedback on your move (Coach Mode)
+    coach_computer: str | None = None  # narrated feedback on the computer's move
 
 
 class GameStateResponse(BaseModel):
