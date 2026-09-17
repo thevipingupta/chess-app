@@ -16,6 +16,10 @@ const DIFFICULTIES = [
 // Preset time controls in minutes (0 = no limit)
 const TIME_PRESETS = [0, 1, 2, 3, 5, 10, 15, 30];
 
+// Pause between showing the player's move and revealing the computer's reply,
+// so the reply doesn't land in the same instant and go unnoticed.
+const COMPUTER_MOVE_DELAY_MS = 500;
+
 const STATUS_COLOR = {
   ok:        "#4ade80",
   check:     "#facc15",
@@ -116,7 +120,9 @@ export default function Game() {
   const reviewTotal = review.ucis.length;
 
   useEffect(() => {
-    if (gameOver) setReviewCursor(-1);
+    // Land on the final position (not the start) so the player sees exactly
+    // how the game ended — they can still step backward from here.
+    if (gameOver) setReviewCursor(reviewTotal - 1);
   }, [gameOver]);
 
   const stepTo = useCallback((next) => {
@@ -236,7 +242,23 @@ export default function Game() {
         setComputerTime(t => t === null ? null : Math.max(0, t - elapsed));
       }
       playMoveSound();
-      if (data.computer_move) playOpponentMoveSound();
+
+      // Reveal the player's own move first, then pause briefly before showing
+      // the computer's reply — both land in the same API response, so without
+      // this the computer's move is too fast to actually see happen.
+      if (data.computer_move) {
+        try {
+          const afterPlayerMove = new Chess((localChess || new Chess(fen)).fen());
+          const promotion = move.length === 5 ? move[4] : undefined;
+          afterPlayerMove.move(promotion ? { from, to, promotion } : { from, to });
+          setFen(afterPlayerMove.fen());
+        } catch {
+          // fall through — worst case the pause just shows the pre-move position
+        }
+        await new Promise(res => setTimeout(res, COMPUTER_MOVE_DELAY_MS));
+        playOpponentMoveSound();
+      }
+
       setFen(data.fen);
       setStatus(data.status);
       setGameOver(data.game_over);
@@ -253,7 +275,7 @@ export default function Game() {
     } finally {
       setThinking(false);
     }
-  }, [gameId, gameOver, thinking]);
+  }, [gameId, gameOver, thinking, localChess, fen]);
 
   // ── Click-to-move ────────────────────────────────────────────────────────
   const onSquareClick = useCallback(({ square }) => {
