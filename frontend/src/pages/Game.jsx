@@ -148,7 +148,6 @@ export default function Game() {
   const [coachMode, setCoachMode]               = useState(false);
   const [coachVoiceEnabled, setCoachVoiceEnabled] = useState(true);
   const [coachPlayerMsg, setCoachPlayerMsg]     = useState("");
-  const [coachComputerMsg, setCoachComputerMsg] = useState("");
   const coachVoiceRef = useRef(true);
 
   useEffect(() => {
@@ -160,12 +159,9 @@ export default function Game() {
   // Distinct voice styling from any other narrator in the app — a slightly
   // deeper, more deliberate pace, so the coach reads as its own persona.
   // Not modeled on, or attributed to, any real person.
-  const speakCoach = useCallback((text, { interrupt = true } = {}) => {
+  const speakCoach = useCallback((text) => {
     if (!coachVoiceRef.current || !window.speechSynthesis || !text) return;
-    // Only cancel stale speech from an earlier move — the player's and
-    // computer's lines within the same round should queue back-to-back
-    // instead of the second one cutting the first off mid-sentence.
-    if (interrupt) window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel();   // clear any stale speech from a prior move
     const u = new SpeechSynthesisUtterance(text);
     u.rate  = 0.95;
     u.pitch = 0.8;
@@ -258,7 +254,6 @@ export default function Game() {
     setComputerTime(null);
     setError("");
     setCoachPlayerMsg("");
-    setCoachComputerMsg("");
   };
 
   const startGame = async () => {
@@ -272,7 +267,6 @@ export default function Game() {
     setHintsLeft(5);
     setHintSquares({});
     setCoachPlayerMsg("");
-    setCoachComputerMsg("");
     const secs = getTimeSeconds();
     try {
       const { data } = await api.post("/game/new", { difficulty });
@@ -302,7 +296,6 @@ export default function Game() {
     setSelectedSq(null);
     setOptionSquares({});
     setCoachPlayerMsg("");
-    setCoachComputerMsg("");
     try {
       const { data } = await api.post(`/game/${gameId}/move`, { move, coach: coachMode });
       // Player's Fischer increment — added the moment their move is confirmed
@@ -338,10 +331,6 @@ export default function Game() {
         }
         await new Promise(res => setTimeout(res, COMPUTER_MOVE_DELAY_MS));
         playOpponentMoveSound();
-        if (data.coach_computer) {
-          setCoachComputerMsg(data.coach_computer);
-          speakCoach(data.coach_computer, { interrupt: false });
-        }
       }
 
       setFen(data.fen);
@@ -551,7 +540,7 @@ export default function Game() {
             <p style={s.hint}>Click a piece to select, then click the destination</p>
           )}
 
-          {coachMode && (coachPlayerMsg || coachComputerMsg) && (
+          {coachMode && coachPlayerMsg && (
             <div style={s.coachPanel}>
               <div style={s.coachHeader}>
                 <span>🧑‍🏫 Coach</span>
@@ -563,8 +552,7 @@ export default function Game() {
                   {coachVoiceEnabled ? "🔊" : "🔇"}
                 </button>
               </div>
-              {coachPlayerMsg && <p style={s.coachLine}><strong>You:</strong> {coachPlayerMsg}</p>}
-              {coachComputerMsg && <p style={s.coachLine}><strong>Computer:</strong> {coachComputerMsg}</p>}
+              <p style={s.coachLine}>{coachPlayerMsg}</p>
             </div>
           )}
         </div>

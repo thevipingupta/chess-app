@@ -26,7 +26,6 @@ class MoveResponse(BaseModel):
     game_over: bool
     winner: str | None           # "white" | "black" | "draw" | None
     coach_player: str | None = None    # narrated feedback on your move (Coach Mode)
-    coach_computer: str | None = None  # narrated feedback on the computer's move
 
 
 class GameStateResponse(BaseModel):

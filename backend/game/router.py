@@ -130,7 +130,6 @@ async def make_move(
         raise HTTPException(status_code=400, detail=f"Invalid move format: {req.move}")
 
     moves.append(req.move)
-    pre_computer_fen = board.fen()
 
     # Check game state after player's move
     status, game_over, winner = board_status(board)
@@ -154,16 +153,13 @@ async def make_move(
         session.result = winner or "draw"
     db.commit()
 
-    # Coach Mode — best-effort narration; never let it break the move itself
+    # Coach Mode — best-effort narration of the player's own move only;
+    # never let it break the move itself
     coach_player = None
-    coach_computer = None
     if req.coach and settings.ollama_base_url:
         try:
             player_eval = evaluate_move(pre_player_fen, req.move, "white")
             coach_player = await _coach_narrate(player_eval)
-            if computer_move_uci:
-                computer_eval = evaluate_move(pre_computer_fen, computer_move_uci, "black")
-                coach_computer = await _coach_narrate(computer_eval)
         except Exception:
             logger.exception("Coach narration failed")
 
@@ -175,7 +171,6 @@ async def make_move(
         game_over=game_over,
         winner=winner,
         coach_player=coach_player,
-        coach_computer=coach_computer,
     )
 
 
