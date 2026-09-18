@@ -160,9 +160,12 @@ export default function Game() {
   // Distinct voice styling from any other narrator in the app — a slightly
   // deeper, more deliberate pace, so the coach reads as its own persona.
   // Not modeled on, or attributed to, any real person.
-  const speakCoach = useCallback((text) => {
+  const speakCoach = useCallback((text, { interrupt = true } = {}) => {
     if (!coachVoiceRef.current || !window.speechSynthesis || !text) return;
-    window.speechSynthesis.cancel();
+    // Only cancel stale speech from an earlier move — the player's and
+    // computer's lines within the same round should queue back-to-back
+    // instead of the second one cutting the first off mid-sentence.
+    if (interrupt) window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.rate  = 0.95;
     u.pitch = 0.8;
@@ -337,7 +340,7 @@ export default function Game() {
         playOpponentMoveSound();
         if (data.coach_computer) {
           setCoachComputerMsg(data.coach_computer);
-          speakCoach(data.coach_computer);
+          speakCoach(data.coach_computer, { interrupt: false });
         }
       }
 
