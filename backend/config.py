@@ -23,9 +23,16 @@ class Settings(BaseSettings):
     @field_validator("database_url", mode="before")
     @classmethod
     def normalise_postgres_url(cls, v: str) -> str:
-        """Render provides legacy postgres:// prefix; SQLAlchemy requires postgresql://."""
-        if isinstance(v, str) and v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql://", 1)
+        """Render/Railway provide postgres:// or bare postgresql://. Pin the
+        driver to psycopg2 explicitly — newer SQLAlchemy versions resolve a
+        driver-less postgresql:// URL to the psycopg (v3) dialect by default,
+        which isn't installed here, causing a ModuleNotFoundError at startup."""
+        if not isinstance(v, str):
+            return v
+        if v.startswith("postgres://"):
+            v = v.replace("postgres://", "postgresql://", 1)
+        if v.startswith("postgresql://"):
+            v = v.replace("postgresql://", "postgresql+psycopg2://", 1)
         return v
 
 
