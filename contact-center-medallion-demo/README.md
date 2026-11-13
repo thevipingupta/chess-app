@@ -53,15 +53,19 @@ python src/generate/generate_sources.py                 # seed 20260302 -> data/
 python src/generate/generate_sources.py --seed 7        # a different, still reproducible, dataset
 ```
 
-Writes 14 weeks (2026-03-02 to 2026-06-07, batches B001 to B098) of synthetic sources into `data/source/`:
+The generator reads the Five9 column lists and types from `reference/Contact_Center.xlsx` (copy the workbook there; it is git-ignored). It needs `openpyxl` plus the standard library. It writes 14 weeks (2026-03-02 to 2026-06-07, batches B001 to B098) to `data/source/` (git-ignored):
 
-- `acd/ACD_<yyyymmdd>_B<nnn>.csv`: 30-minute interval export per queue
-- `contacts/CONTACT_<yyyymmdd>_B<nnn>.jsonl`: one line per contact
-- `wfm/WFM_<yyyymmdd>_B<nnn>.csv`: one row per agent per day
-- `roster/ROSTER_<yyyymmdd>_B<nnn>.csv`: SCD2 delta rows, written on change dates
-- `_reference/reason_codes.csv` and `_planted_issues.csv` (the log of planted data quality issues, with batch, file, and detection rule)
+- `five9/ACD_ALL_<yyyymmdd>_B<nnn>.csv`: 30-minute interval rows by skill and campaign
+- `five9/CALLLOG_<yyyymmdd>_B<nnn>.csv`: one row per call (177 workbook columns)
+- `five9/CALL_SEGMENT_<yyyymmdd>_B<nnn>.csv`: one row per call segment, joined on CALL ID
+- `five9/VOICEMAIL_LIFECYCLE_<yyyymmdd>_B<nnn>.csv`: voicemail events, joined on CONTACT ID
+- `wfm/wfm_daily_<yyyymmdd>_B<nnn>.csv`: ASSUMPTION, not a Five9 export (commented header)
+- `_planted_issues.csv`: planted data quality issues, with batch, file, column, and detection rule
+- `_reference/header_changes.csv`: batches where the header changed
 
-The generator is seeded, so the same seed produces byte-identical files. It needs only the Python standard library and runs in a few seconds. It also prints row counts, planted-issue totals, and the date range.
+It also writes `docs/source_column_map.csv`, one row per workbook column with its snake_case name, silver table, silver type, and PII flag.
+
+The generator is seeded, so the same seed produces byte-identical files. It prints row counts, planted-issue totals, the schema change batch, and a check that every generated header column exists in the workbook.
 
 ### Step 2: Load bronze
 

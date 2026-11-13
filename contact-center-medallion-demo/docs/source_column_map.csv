@@ -1,0 +1,479 @@
+source_table,source_column,occurrence,snake_case_name,target_silver_table,silver_data_type,is_pii,notes
+API_ACD_ALL,DATE,1,date,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,DATE AND HOUR,1,date_and_hour,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,DAY OF WEEK,1,day_of_week,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,MONTH,1,month,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,TIME INTERVAL,1,time_interval,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,DISPOSITION,1,disposition,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,DISPOSITION GROUP A,1,disposition_group_a,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,DISPOSITION GROUP B,1,disposition_group_b,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,DISPOSITION GROUP C,1,disposition_group_c,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,DISPOSITION PATH,1,disposition_path,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,SKILL,1,skill,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,SOA MIN/THRESHOLD (SEC),1,soa_min_threshold_sec,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CALL SURVEY RESULT,1,call_survey_result,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CALL TYPE,1,call_type,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CAMPAIGN,1,campaign,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CAMPAIGN TYPE,1,campaign_type,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,MEDIA TYPE,1,media_type,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,PARKS,1,parks,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,AGENT,1,agent,stg_api_acd_all,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_ACD_ALL,AGENT EMAIL,1,agent_email,stg_api_acd_all,VARCHAR(16777216),Y,
+API_ACD_ALL,AGENT FIRST NAME,1,agent_first_name,stg_api_acd_all,VARCHAR(16777216),Y,
+API_ACD_ALL,AGENT GROUP,1,agent_group,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,AGENT LAST NAME,1,agent_last_name,stg_api_acd_all,VARCHAR(16777216),Y,
+API_ACD_ALL,AGENT NAME,1,agent_name,stg_api_acd_all,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_ACD_ALL,FILE_NAME,1,five9_file_name,stg_api_acd_all,VARCHAR(16777216),N,Five9 metadata; silver name five9_file_name avoids clash with bronze metadata
+API_ACD_ALL,LOAD_TIMESTAMP,1,five9_load_timestamp,stg_api_acd_all,VARCHAR(16777216),N,Five9 metadata; silver name five9_load_timestamp avoids clash with bronze metadata; UTC (assumed)
+API_ACD_ALL,CALL ID,1,call_id,stg_api_acd_all,VARCHAR(16777216),N,join key to CALL_SEGMENT CALL ID
+API_ACD_ALL,PARK TIME,1,park_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,YEAR,1,year,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,ABANDONED,1,abandoned,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CONSULTS,1,consults,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,RING TIME,1,ring_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,TIME,1,time,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,QUEUE WAIT TIME,1,queue_wait_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,QUEUE CALLBACK PROCESSING,1,queue_callback_processing,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CONSULTS ANSWERED,1,consults_answered,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,TALK TIME LESS HOLD AND PARK,1,talk_time_less_hold_and_park,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CONFERENCES,1,conferences,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,HOLD TIME,1,hold_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,VOICEMAILS DECLINED,1,voicemails_declined,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,IVR TIME,1,ivr_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,QUARTER HOUR,1,quarter_hour,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,HOUR,1,hour,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,AFTER CALL WORK TIME,1,after_call_work_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,TALK TIME,1,talk_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,QUEUE CALLBACK WAIT TIME,1,queue_callback_wait_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,TOTAL QUEUE TIME,1,total_queue_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,HANDLE TIME,1,handle_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CONSULT TIME,1,consult_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,SPEED OF ANSWER,1,speed_of_answer,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,VOICE IVR,1,voice_ivr,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CONFERENCE TIME,1,conference_time,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,HOLDS,1,holds,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,TIMESTAMP,1,timestamp,stg_api_acd_all,VARCHAR(16777216),N,UTC (assumed)
+API_ACD_ALL,VISUAL IVR,1,visual_ivr,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,TRANSFERS,1,transfers,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,VOICEMAILS HANDLED,1,voicemails_handled,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,HALF HOUR,1,half_hour,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,VOICEMAILS DELETED,1,voicemails_deleted,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,DAY OF MONTH,1,day_of_month,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,FIRST CALL RESOLUTION,1,first_call_resolution,stg_api_acd_all,VARCHAR(16777216),N,added in week 9 (ACD files from 2026-04-29); absent from earlier ACD files
+API_ACD_ALL,QUEUE OVERFLOW,1,queue_overflow,stg_api_acd_all,VARCHAR(16777216),N,added in week 9 (ACD files from 2026-04-29); absent from earlier ACD files
+API_ACD_ALL,QUEUE CALLBACK REGISTERED,1,queue_callback_registered,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,TIME TO ABANDON,1,time_to_abandon,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,HOUR OF DAY,1,hour_of_day,stg_api_acd_all,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_ACD_ALL,VOICEMAILS,1,voicemails,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,TIMESTAMP MILLISECOND,1,timestamp_millisecond,stg_api_acd_all,VARCHAR(16777216),N,UTC (assumed)
+API_ACD_ALL,SERVICE LEVEL,1,service_level,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,VOICEMAILS TRANSFERRED,1,voicemails_transferred,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,VOICEMAILS RETURNED CALL,1,voicemails_returned_call,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,CALLS,1,calls,stg_api_acd_all,VARCHAR(16777216),N,
+API_ACD_ALL,EXTENSION,1,extension,stg_api_acd_all,VARCHAR(16777216),N,
+API_CALLLOG,DATE,1,date,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,DATE AND HOUR,1,date_and_hour,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,DAY OF WEEK,1,day_of_week,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,MONTH,1,month,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,TIME INTERVAL,1,time_interval,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,ABANDON RATE,1,abandon_rate,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,ANI,1,ani,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,ANI COUNTRY,1,ani_country,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,ANI STATE,1,ani_state,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,CALL SURVEY RESULT,1,call_survey_result,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CALL TYPE,1,call_type,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CAMPAIGN,1,campaign,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CAMPAIGN TYPE,1,campaign_type,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CUSTOMER NAME,1,customer_name,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,DIAL RESULT,1,dial_result,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DISPOSITION,1,disposition,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DISPOSITION GROUP A,1,disposition_group_a,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DISPOSITION GROUP B,1,disposition_group_b,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DISPOSITION GROUP C,1,disposition_group_c,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DISPOSITION PATH,1,disposition_path,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DNIS COUNTRY,1,dnis_country,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DNIS STATE,1,dnis_state,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,IVR PATH,1,ivr_path,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,LIST NAME,1,list_name,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,NOTES,1,notes,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,PARENT SESSION ID,1,parent_session_id,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,RECORDINGS,1,recordings,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SESSION ID,1,session_id,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SIP REFER,1,sip_refer,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SIP REFER DESTINATION,1,sip_refer_destination,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SIP REFER SOURCE,1,sip_refer_source,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SKILL,1,skill,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SOA MIN/THRESHOLD (SEC),1,soa_min_threshold_sec,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,PARKS,1,parks,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,PREVIEW INTERRUPTED,1,preview_interrupted,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,PREVIEW INTERRUPTED BY CALL,1,preview_interrupted_by_call,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,PREVIEW INTERRUPTED BY SKILL VM,1,preview_interrupted_by_skill_vm,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,PREVIEW TIME,1,preview_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,VIDEO TIME,1,video_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,AGENT,1,agent,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,AGENT EMAIL,1,agent_email,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,AGENT FIRST NAME,1,agent_first_name,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,AGENT GROUP,1,agent_group,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,AGENT LAST NAME,1,agent_last_name,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,AGENT NAME,1,agent_name,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,DEST AGENT,1,dest_agent,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,DEST AGENT EMAIL,1,dest_agent_email,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,DEST AGENT FIRST NAME,1,dest_agent_first_name,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,DEST AGENT GROUP,1,dest_agent_group,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DEST AGENT LAST NAME,1,dest_agent_last_name,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,DEST AGENT NAME,1,dest_agent_name,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,CITY,1,city,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,COMPANY,1,company,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,EMAIL,1,email,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,FIRST_NAME,1,first_name,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,LANGUAGE SELECT,1,language_select,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,LAST_NAME,1,last_name,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,LASTAGENT,1,lastagent,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,LASTCAMPAIGN,1,lastcampaign,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,LASTDISPOSITION,1,lastdisposition,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,NUMBER2,1,number2,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,NUMBER3,1,number3,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,SALESFORCE_ID,1,salesforce_id,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,STATE,1,state,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,STREET,1,street,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,ZIP,1,zip,stg_api_calllog,VARCHAR(16777216),Y,
+API_CALLLOG,AGENT.FULL_NAME,1,agent_dot_full_name,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,CALL CENTER EVENTS.TRAINING,1,call_center_events_dot_training,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CALL CENTER EVENTS.UNFORESEEN CLOSURE,1,call_center_events_dot_unforeseen_closure,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.ABANDONED,1,studio_dot_abandoned,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.RETURN_DATA_STORE,1,studio_dot_return_data_store,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.ROUTE_REASON,1,studio_dot_route_reason,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.ROUTE_TYPE,1,studio_dot_route_type,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.ROUTE_VALUE,1,studio_dot_route_value,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.TASK_POP,1,studio_dot_task_pop,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.TASK_REGION,1,studio_dot_task_region,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.TASK_UUID,1,studio_dot_task_uuid,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.TRANSFER_DISPOSITION,1,studio_dot_transfer_disposition,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SURVEY.ECC VOICE MESSAGE,1,survey_dot_ecc_voice_message,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SURVEY.LANGUAGE,1,survey_dot_language,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,WORKSHEET ID,1,worksheet_id,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,FILE_NAME,1,five9_file_name,stg_api_calllog,VARCHAR(16777216),N,Five9 metadata; silver name five9_file_name avoids clash with bronze metadata
+API_CALLLOG,LOAD_TIMESTAMP,1,five9_load_timestamp,stg_api_calllog,VARCHAR(16777216),N,Five9 metadata; silver name five9_load_timestamp avoids clash with bronze metadata; UTC (assumed)
+API_CALLLOG,QUEUE CALLBACK PROCESSING,1,queue_callback_processing,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.DURATION,1,studio_dot_duration,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,NO PARTY CONTACT,1,no_party_contact,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SIP RESPONSE CODE,1,sip_response_code,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,VOICEMAILS TRANSFERRED,1,voicemails_transferred,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SPEED OF ANSWER,1,speed_of_answer,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,TIME,1,time,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,DIAL TIME,1,dial_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DNIS COUNTRY CODE,1,dnis_country_code,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,TALK TIME LESS HOLD AND PARK,1,talk_time_less_hold_and_park,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,ABANDONED,1,abandoned,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,STUDIO.TASK_ID,1,studio_dot_task_id,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,RECORD COUNTER,1,record_counter,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,AGENT ID,1,agent_id,stg_api_calllog,VARCHAR(16777216),N,agent key used for WFM join
+API_CALLLOG,DNIS AREA CODE,1,dnis_area_code,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CALLS,1,calls,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,PARK TIME,1,park_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CONSULT TIME,1,consult_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,HANDLE TIME,1,handle_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,RATE,1,rate,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SURVEY.BENEFITS,1,survey_dot_benefits,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,TOTAL QUEUE TIME,1,total_queue_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SURVEY.ECC SURVEY QUESTION 3,1,survey_dot_ecc_survey_question_3,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SURVEY.ECC SURVEY QUESTION 2,1,survey_dot_ecc_survey_question_2,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,MANUAL TIME,1,manual_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,VOICEMAILS HANDLE TIME,1,voicemails_handle_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SURVEY.EEC SURVEY QUESTION 4,1,survey_dot_eec_survey_question_4,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,AGENT.ID,1,agent_dot_id,stg_api_calllog,VARCHAR(16777216),N,second agent identifier; near-duplicate of AGENT ID
+API_CALLLOG,CALLS TIMED OUT IN IVR,1,calls_timed_out_in_ivr,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CONTACT ID,1,contact_id,stg_api_calllog,VARCHAR(16777216),N,contact key; joins voicemail and segments
+API_CALLLOG,CONTACTED,1,contacted,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,SERVICE LEVEL,1,service_level,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,TIME TO ABANDON,1,time_to_abandon,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,RING TIME,1,ring_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,AFTER CALL WORK TIME,1,after_call_work_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,VOICEMAILS DECLINED,1,voicemails_declined,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,VOICEMAILS RETURNED CALL,1,voicemails_returned_call,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,HOUR OF DAY,1,hour_of_day,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,HOLD TIME,1,hold_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,QUEUE WAIT TIME,1,queue_wait_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,HOLDS,1,holds,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,QUEUE CALLBACK WAIT TIME,1,queue_callback_wait_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CONTACTCREATEDATETIME,1,contactcreatedatetime,stg_api_calllog,VARCHAR(16777216),N,UTC (assumed)
+API_CALLLOG,HALF HOUR,1,half_hour,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,SURVEY.ECC SURVEY QUESTION 1,1,survey_dot_ecc_survey_question_1,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,TALK TIME,1,talk_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DISCONNECTED FROM HOLD,1,disconnected_from_hold,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,YEAR,1,year,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,COST,1,cost,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,LIVE CONNECT,1,live_connect,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CONFERENCES,1,conferences,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,LASTDISPOSITIONDATETIME,1,lastdispositiondatetime,stg_api_calllog,VARCHAR(16777216),N,UTC (assumed)
+API_CALLLOG,TIMESTAMP,1,timestamp,stg_api_calllog,VARCHAR(16777216),N,UTC (assumed)
+API_CALLLOG,IVR TIME,1,ivr_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CALL CENTER EVENTS.QCB,1,call_center_events_dot_qcb,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,TIMESTAMP MILLISECOND,1,timestamp_millisecond,stg_api_calllog,VARCHAR(16777216),N,UTC (assumed)
+API_CALLLOG,HOUR,1,hour,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,TRANSFERS,1,transfers,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CALLS COMPLETED IN IVR,1,calls_completed_in_ivr,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,QUARTER HOUR,1,quarter_hour,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,CONFERENCE TIME,1,conference_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CONTACTMODIFIEDDATETIME,1,contactmodifieddatetime,stg_api_calllog,VARCHAR(16777216),N,UTC (assumed)
+API_CALLLOG,DEST AGENT EXTENSION,1,dest_agent_extension,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DAY OF MONTH,1,day_of_month,stg_api_calllog,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALLLOG,BILL TIME (ROUNDED),1,bill_time_rounded,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,VOICEMAILS,1,voicemails,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,VOICEMAILS DELETED,1,voicemails_deleted,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,AGENT.STATION_ID,1,agent_dot_station_id,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,ANI COUNTRY CODE,1,ani_country_code,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,EXTENSION,1,extension,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CALL ID,1,call_id,stg_api_calllog,VARCHAR(16777216),N,join key to CALL_SEGMENT CALL ID
+API_CALLLOG,3RD PARTY TALK TIME,1,3rd_party_talk_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,ANI AREA CODE,1,ani_area_code,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,STUDIO.TASK_ACCOUNT_ID,1,studio_dot_task_account_id,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,NUMBER1,1,number1,stg_api_calllog,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALLLOG,VOICEMAILS HANDLED,1,voicemails_handled,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,CONTACT MODIFIED TIMESTAMP,1,contact_modified_timestamp,stg_api_calllog,VARCHAR(16777216),N,UTC (assumed)
+API_CALLLOG,QUEUE CALLBACK REGISTERED,1,queue_callback_registered,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,QUEUE CALLBACK REGISTERED_tmp,1,queue_callback_registered_tmp,stg_api_calllog,VARCHAR(16777216),N,near-duplicate of QUEUE CALLBACK REGISTERED; not an exact duplicate
+API_CALLLOG,CONTACT CREATE TIMESTAMP,1,contact_create_timestamp,stg_api_calllog,VARCHAR(16777216),N,UTC (assumed)
+API_CALLLOG,CALL TIME,1,call_time,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,DNIS,1,dnis,stg_api_calllog,VARCHAR(16777216),N,
+API_CALLLOG,FIRST CALL RESOLUTION,1,first_call_resolution,stg_api_calllog,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_calllog/API_Calllog_10312025.csv
+API_CALLLOG,QUEUE OVERFLOW,1,queue_overflow,stg_api_calllog,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_calllog/API_Calllog_10312025.csv
+API_CALLLOG,MEDIA TYPE,1,media_type,stg_api_calllog,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_calllog/API_Calllog_10312025.csv
+API_CALLLOG,VISUAL IVR,1,visual_ivr,stg_api_calllog,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_calllog/API_Calllog_10312025.csv
+API_CALLLOG,VOICE IVR,1,voice_ivr,stg_api_calllog,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_calllog/API_Calllog_10312025.csv
+API_CALLLOG,CONSULTS,1,consults,stg_api_calllog,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_calllog/API_Calllog_10312025.csv
+API_CALLLOG,CONSULTS ANSWERED,1,consults_answered,stg_api_calllog,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_calllog/API_Calllog_10312025.csv
+API_CALLLOG,CALL ANALYSIS DURATION,1,call_analysis_duration,stg_api_calllog,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-11-06 via Daily/api/api_calllog/API_CallLog.csv
+API_CALLLOG,CALL ANALYSIS END TIME,1,call_analysis_end_time,stg_api_calllog,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-11-06 via Daily/api/api_calllog/API_CallLog.csv
+API_CALLLOG,CALL ANALYSIS LEVEL,1,call_analysis_level,stg_api_calllog,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-11-06 via Daily/api/api_calllog/API_CallLog.csv
+API_CALLLOG,CALL ANALYSIS RESULT,1,call_analysis_result,stg_api_calllog,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-11-06 via Daily/api/api_calllog/API_CallLog.csv
+API_CALLLOG,CALL ANALYSIS START TIME,1,call_analysis_start_time,stg_api_calllog,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-11-06 via Daily/api/api_calllog/API_CallLog.csv
+API_CALL_SEGMENTREPORTALL,DATE,1,date,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,DATE AND HOUR,1,date_and_hour,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,DAY OF WEEK,1,day_of_week,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,MONTH,1,month,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,ANI,1,ani,stg_api_call_segment,VARCHAR(16777216),Y,
+API_CALL_SEGMENTREPORTALL,ANI COUNTRY,1,ani_country,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,ANI STATE,1,ani_state,stg_api_call_segment,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALL_SEGMENTREPORTALL,CALL SURVEY RESULT,1,call_survey_result,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CALL TYPE,1,call_type,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CAMPAIGN,1,campaign,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CAMPAIGN TYPE,1,campaign_type,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CUSTOMER NAME,1,customer_name,stg_api_call_segment,VARCHAR(16777216),Y,
+API_CALL_SEGMENTREPORTALL,DISPOSITION,1,disposition,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,DISPOSITION GROUP A,1,disposition_group_a,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,DISPOSITION GROUP B,1,disposition_group_b,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,DISPOSITION GROUP C,1,disposition_group_c,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,DISPOSITION PATH,1,disposition_path,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,DNIS COUNTRY,1,dnis_country,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,DNIS STATE,1,dnis_state,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,LIST NAME,1,list_name,stg_api_call_segment,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALL_SEGMENTREPORTALL,NOTES,1,notes,stg_api_call_segment,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALL_SEGMENTREPORTALL,RECORDINGS,1,recordings,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,SESSION ID,1,session_id,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,SKILL,1,skill,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,SOA MIN/THRESHOLD (SEC),1,soa_min_threshold_sec,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,PARK TIME,1,park_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,PREVIEW TIME,1,preview_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CALLED PARTY,1,called_party,stg_api_call_segment,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALL_SEGMENTREPORTALL,CALLING PARTY,1,calling_party,stg_api_call_segment,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALL_SEGMENTREPORTALL,RESULT,1,result,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,SEGMENT TYPE,1,segment_type,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,FILE_NAME,1,five9_file_name,stg_api_call_segment,VARCHAR(16777216),N,Five9 metadata; silver name five9_file_name avoids clash with bronze metadata
+API_CALL_SEGMENTREPORTALL,LOAD_TIMESTAMP,1,five9_load_timestamp,stg_api_call_segment,VARCHAR(16777216),N,Five9 metadata; silver name five9_load_timestamp avoids clash with bronze metadata; UTC (assumed)
+API_CALL_SEGMENTREPORTALL,DISCONNECTED FROM HOLD,1,disconnected_from_hold,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,AFTER CALL WORK TIME,1,after_call_work_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CONTACT ID,1,contact_id,stg_api_call_segment,VARCHAR(16777216),N,contact key; joins voicemail and segments
+API_CALL_SEGMENTREPORTALL,YEAR,1,year,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,ANI AREA CODE,1,ani_area_code,stg_api_call_segment,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALL_SEGMENTREPORTALL,RATE,1,rate,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CALL TIME,1,call_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,SERVICE LEVEL,1,service_level,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,SEGMENT TIME,1,segment_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,RING TIME,1,ring_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,TIMESTAMP,1,timestamp,stg_api_call_segment,VARCHAR(16777216),N,UTC (assumed)
+API_CALL_SEGMENTREPORTALL,TIMESTAMP MILLISECOND,1,timestamp_millisecond,stg_api_call_segment,VARCHAR(16777216),N,UTC (assumed)
+API_CALL_SEGMENTREPORTALL,ANI COUNTRY CODE,1,ani_country_code,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,HANDLE TIME,1,handle_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,HOLD TIME,1,hold_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,IVR TIME,1,ivr_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,QUEUE WAIT TIME,1,queue_wait_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,QUARTER HOUR,1,quarter_hour,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,SPEED OF ANSWER,1,speed_of_answer,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,3RD PARTY TALK TIME,1,3rd_party_talk_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,COST,1,cost,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,HOLDS,1,holds,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,ABANDONED,1,abandoned,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,DNIS,1,dnis,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,QUEUE CALLBACK WAIT TIME,1,queue_callback_wait_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,TOTAL QUEUE TIME,1,total_queue_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CONTACTED,1,contacted,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,HOUR OF DAY,1,hour_of_day,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,CALL SEGMENT ID,1,call_segment_id,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CONFERENCE TIME,1,conference_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,HALF HOUR,1,half_hour,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,DNIS COUNTRY CODE,1,dnis_country_code,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CALLS COMPLETED IN IVR,1,calls_completed_in_ivr,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,PARKS,1,parks,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CONFERENCES,1,conferences,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,TIME,1,time,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,CALL ID,1,call_id,stg_api_call_segment,VARCHAR(16777216),N,join key to CALL_SEGMENT CALL ID
+API_CALL_SEGMENTREPORTALL,HOUR,1,hour,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,TRANSFERS,1,transfers,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,TALK TIME,1,talk_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,DAY OF MONTH,1,day_of_month,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_CALL_SEGMENTREPORTALL,DNIS AREA CODE,1,dnis_area_code,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,CONSULT TIME,1,consult_time,stg_api_call_segment,VARCHAR(16777216),N,
+API_CALL_SEGMENTREPORTALL,TIME INTERVAL,1,time_interval,stg_api_call_segment,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,FIRST CALL RESOLUTION,1,first_call_resolution,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,QUEUE CALLBACK PROCESSING,1,queue_callback_processing,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,QUEUE CALLBACK REGISTERED,1,queue_callback_registered,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,QUEUE OVERFLOW,1,queue_overflow,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,TIME TO ABANDON,1,time_to_abandon,stg_api_call_segment,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,CALLS,1,calls,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,MEDIA TYPE,1,media_type,stg_api_call_segment,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,VISUAL IVR,1,visual_ivr,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,VOICE IVR,1,voice_ivr,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,CONSULTS,1,consults,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,CONSULTS ANSWERED,1,consults_answered,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,TALK TIME LESS HOLD AND PARK,1,talk_time_less_hold_and_park,stg_api_call_segment,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,VOICEMAILS,1,voicemails,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,VOICEMAILS DECLINED,1,voicemails_declined,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,VOICEMAILS DELETED,1,voicemails_deleted,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,VOICEMAILS HANDLED,1,voicemails_handled,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,VOICEMAILS RETURNED CALL,1,voicemails_returned_call,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,VOICEMAILS TRANSFERRED,1,voicemails_transferred,stg_api_call_segment,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,AGENT,1,agent,stg_api_call_segment,VARCHAR(16777216),REVIEW,"Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv; personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALL_SEGMENTREPORTALL,AGENT EMAIL,1,agent_email,stg_api_call_segment,VARCHAR(16777216),Y,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,AGENT FIRST NAME,1,agent_first_name,stg_api_call_segment,VARCHAR(16777216),Y,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,AGENT GROUP,1,agent_group,stg_api_call_segment,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,AGENT LAST NAME,1,agent_last_name,stg_api_call_segment,VARCHAR(16777216),Y,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_CALL_SEGMENTREPORTALL,AGENT NAME,1,agent_name,stg_api_call_segment,VARCHAR(16777216),REVIEW,"Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv; personal-looking; not in CLAUDE.md PII list, decision needed"
+API_CALL_SEGMENTREPORTALL,EXTENSION,1,extension,stg_api_call_segment,"NUMBER(3,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-31 via Daily/api/api_call_segmentreportall/API_Calllog_10312025.csv
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED DATE,1,received_date,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED DATE AND HOUR,1,received_date_and_hour,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED DAY OF WEEK,1,received_day_of_week,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED INTERVAL,1,received_interval,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED MONTH,1,received_month,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,COMMENT,1,comment,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,DELETING AGENT,1,deleting_agent,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,NAME,1,name,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,PROCESSING AGENT,1,processing_agent,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,RETURNED SKILL,1,returned_skill,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,RETURNING AGENT,1,returning_agent,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,VOICEMAIL STATUS,1,voicemail_status,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,VOICEMAIL TYPE,1,voicemail_type,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,CITY,1,city,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,
+API_VOICEMAIL_LIFECYCLE_LOG,COMPANY,1,company,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,EMAIL,1,email,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,
+API_VOICEMAIL_LIFECYCLE_LOG,FIRST_NAME,1,first_name,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,
+API_VOICEMAIL_LIFECYCLE_LOG,LANGUAGE SELECT,1,language_select,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,LAST_NAME,1,last_name,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,
+API_VOICEMAIL_LIFECYCLE_LOG,LASTAGENT,1,lastagent,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,LASTCAMPAIGN,1,lastcampaign,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,LASTDISPOSITION,1,lastdisposition,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,NUMBER2,1,number2,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,NUMBER3,1,number3,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,SALESFORCE_ID,1,salesforce_id,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,STATE,1,state,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,STREET,1,street,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,
+API_VOICEMAIL_LIFECYCLE_LOG,ZIP,1,zip,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,
+API_VOICEMAIL_LIFECYCLE_LOG,FILE_NAME,1,five9_file_name,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 metadata; silver name five9_file_name avoids clash with bronze metadata
+API_VOICEMAIL_LIFECYCLE_LOG,LOAD_TIMESTAMP,1,five9_load_timestamp,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 metadata; silver name five9_load_timestamp avoids clash with bronze metadata; UTC (assumed)
+API_VOICEMAIL_LIFECYCLE_LOG,TIME TO PROCESSED,1,time_to_processed,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,ACCEPTED,1,accepted,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,PROCESSED,1,processed,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,PROCESSED TIMESTAMP,1,processed_timestamp,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,UTC (assumed)
+API_VOICEMAIL_LIFECYCLE_LOG,LASTDISPOSITIONDATETIME,1,lastdispositiondatetime,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,UTC (assumed)
+API_VOICEMAIL_LIFECYCLE_LOG,CALL ID,1,call_id,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,join key to CALL_SEGMENT CALL ID
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED DAY OF MONTH,1,received_day_of_month,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,DELETED,1,deleted,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED QUARTER HOUR,1,received_quarter_hour,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,LISTENED,1,listened,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,COUNTER,1,counter,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,CONTACTMODIFIEDDATETIME,1,contactmodifieddatetime,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,UTC (assumed)
+API_VOICEMAIL_LIFECYCLE_LOG,QUEUED,1,queued,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,NUMBER1,1,number1,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,ANI,1,ani,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED TIMESTAMP,1,received_timestamp,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,UTC (assumed); local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,RETURNED CALL ID,1,returned_call_id,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED TIMESTAMP MILLISECOND,1,received_timestamp_millisecond,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,UTC (assumed); local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED YEAR,1,received_year,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED HOUR,1,received_hour,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,CONTACTCREATEDATETIME,1,contactcreatedatetime,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,UTC (assumed)
+API_VOICEMAIL_LIFECYCLE_LOG,TIME TO RETURN,1,time_to_return,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,RETURNED TIMESTAMP,1,returned_timestamp,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,UTC (assumed)
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED TIME,1,received_time,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,VOICEMAIL ID,1,voicemail_id,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED HALF HOUR,1,received_half_hour,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,CONTACT ID,1,contact_id,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,contact key; joins voicemail and segments
+API_VOICEMAIL_LIFECYCLE_LOG,RECEIVED HOUR OF DAY,1,received_hour_of_day,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm)
+API_VOICEMAIL_LIFECYCLE_LOG,DATE,1,date,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,DATE AND HOUR,1,date_and_hour,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,DAY OF MONTH,1,day_of_month,stg_api_voicemail_lifecycle,"NUMBER(2,0)",N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,DAY OF WEEK,1,day_of_week,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,HALF HOUR,1,half_hour,stg_api_voicemail_lifecycle,TIME(9),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,HOUR,1,hour,stg_api_voicemail_lifecycle,TIME(9),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,HOUR OF DAY,1,hour_of_day,stg_api_voicemail_lifecycle,"NUMBER(2,0)",N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,MONTH,1,month,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,QUARTER HOUR,1,quarter_hour,stg_api_voicemail_lifecycle,TIME(9),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,TIME,1,time,stg_api_voicemail_lifecycle,TIME(9),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,TIME INTERVAL,1,time_interval,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,TIMESTAMP,1,timestamp,stg_api_voicemail_lifecycle,TIMESTAMP_NTZ(9),N,UTC (assumed); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,TIMESTAMP MILLISECOND,1,timestamp_millisecond,stg_api_voicemail_lifecycle,TIMESTAMP_NTZ(9),N,UTC (assumed); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,YEAR,1,year,stg_api_voicemail_lifecycle,"NUMBER(4,0)",N,local report label; account time zone assumed America/New_York (confirm); Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,ABANDONED,1,abandoned,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,DISPOSITION,1,disposition,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,DISPOSITION GROUP A,1,disposition_group_a,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,DISPOSITION GROUP B,1,disposition_group_b,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,DISPOSITION GROUP C,1,disposition_group_c,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,DISPOSITION PATH,1,disposition_path,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,FIRST CALL RESOLUTION,1,first_call_resolution,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,QUEUE CALLBACK PROCESSING,1,queue_callback_processing,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,QUEUE CALLBACK REGISTERED,1,queue_callback_registered,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,QUEUE CALLBACK WAIT TIME,1,queue_callback_wait_time,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,QUEUE OVERFLOW,1,queue_overflow,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,QUEUE WAIT TIME,1,queue_wait_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,SERVICE LEVEL,1,service_level,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,SKILL,1,skill,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,SOA MIN/THRESHOLD (SEC),1,soa_min_threshold_sec,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,SPEED OF ANSWER,1,speed_of_answer,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,TIME TO ABANDON,1,time_to_abandon,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,TOTAL QUEUE TIME,1,total_queue_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CALL SURVEY RESULT,1,call_survey_result,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CALL TYPE,1,call_type,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CALLS,1,calls,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CAMPAIGN,1,campaign,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CAMPAIGN TYPE,1,campaign_type,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,MEDIA TYPE,1,media_type,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,VISUAL IVR,1,visual_ivr,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,VOICE IVR,1,voice_ivr,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,AFTER CALL WORK TIME,1,after_call_work_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CONFERENCE TIME,1,conference_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CONFERENCES,1,conferences,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CONSULT TIME,1,consult_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CONSULTS,1,consults,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,CONSULTS ANSWERED,1,consults_answered,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,HANDLE TIME,1,handle_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,HOLD TIME,1,hold_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,HOLDS,1,holds,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,IVR TIME,1,ivr_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,PARK TIME,1,park_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,PARKS,1,parks,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,RING TIME,1,ring_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,TALK TIME,1,talk_time,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,TALK TIME LESS HOLD AND PARK,1,talk_time_less_hold_and_park,stg_api_voicemail_lifecycle,TIME(9),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,TRANSFERS,1,transfers,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,VOICEMAILS,1,voicemails,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,VOICEMAILS DECLINED,1,voicemails_declined,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,VOICEMAILS DELETED,1,voicemails_deleted,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,VOICEMAILS HANDLED,1,voicemails_handled,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,VOICEMAILS RETURNED CALL,1,voicemails_returned_call,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,VOICEMAILS TRANSFERRED,1,voicemails_transferred,stg_api_voicemail_lifecycle,"NUMBER(1,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,AGENT,1,agent,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv; personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,AGENT EMAIL,1,agent_email,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,AGENT FIRST NAME,1,agent_first_name,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,AGENT GROUP,1,agent_group,stg_api_voicemail_lifecycle,VARCHAR(16777216),N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,AGENT LAST NAME,1,agent_last_name,stg_api_voicemail_lifecycle,VARCHAR(16777216),Y,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
+API_VOICEMAIL_LIFECYCLE_LOG,AGENT NAME,1,agent_name,stg_api_voicemail_lifecycle,VARCHAR(16777216),REVIEW,"Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv; personal-looking; not in CLAUDE.md PII list, decision needed"
+API_VOICEMAIL_LIFECYCLE_LOG,EXTENSION,1,extension,stg_api_voicemail_lifecycle,"NUMBER(3,0)",N,Five9 schema evolution: ADD_COLUMN at 2025-10-28 via Daily/api/api_voicemail_lifecycle_log/API_VoiceMail.csv
