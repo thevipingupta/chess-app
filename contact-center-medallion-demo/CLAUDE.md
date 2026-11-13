@@ -104,8 +104,9 @@ contact-center-medallion-demo/
 ├── CLAUDE.md
 ├── README.md
 ├── data/
-│   └── synthetic/          # generated source extracts (CSV/JSON); generator scripts live in scripts/
-├── scripts/                # synthetic data generators and Python helpers
+│   └── source/             # generated source feeds (acd/, contacts/, wfm/, roster/), planted-issue log; git-ignored
+├── src/
+│   └── generate/           # generate_sources.py: seeded synthetic generator (stdlib only)
 ├── sql/
 │   ├── 00_setup/           # database, schemas, CONTROL tables
 │   ├── 10_bronze/          # raw_ DDL and sp_load_raw_* procedures

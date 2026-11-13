@@ -12,8 +12,8 @@ See `CLAUDE.md` for the full design rules (naming, time zones, idempotency, and 
 contact-center-medallion-demo/
 ├── CLAUDE.md               # project reference and rules
 ├── README.md               # this file
-├── data/synthetic/         # generated source extracts
-├── scripts/                # synthetic data generators
+├── data/source/            # generated source feeds + _planted_issues.csv (git-ignored)
+├── src/generate/           # seeded synthetic data generator
 ├── sql/
 │   ├── 00_setup/           # database CC_DEMO, schemas, CONTROL tables
 │   ├── 10_bronze/          # raw_ tables and sp_load_raw_* procedures
@@ -49,10 +49,19 @@ This creates `CC_DEMO` with the `BRONZE`, `SILVER`, `GOLD`, and `CONTROL` schema
 ### Step 1: Generate synthetic source data
 
 ```bash
-python scripts/generate_synthetic_contacts.py --batch-id BATCH_0001 --out data/synthetic/
+python src/generate/generate_sources.py                 # seed 20260302 -> data/source/
+python src/generate/generate_sources.py --seed 7        # a different, still reproducible, dataset
 ```
 
-Writes source extracts for one batch into `data/synthetic/`. Use a new `--batch-id` for each new batch.
+Writes 14 weeks (2026-03-02 to 2026-06-07, batches B001 to B098) of synthetic sources into `data/source/`:
+
+- `acd/ACD_<yyyymmdd>_B<nnn>.csv`: 30-minute interval export per queue
+- `contacts/CONTACT_<yyyymmdd>_B<nnn>.jsonl`: one line per contact
+- `wfm/WFM_<yyyymmdd>_B<nnn>.csv`: one row per agent per day
+- `roster/ROSTER_<yyyymmdd>_B<nnn>.csv`: SCD2 delta rows, written on change dates
+- `_reference/reason_codes.csv` and `_planted_issues.csv` (the log of planted data quality issues, with batch, file, and detection rule)
+
+The generator is seeded, so the same seed produces byte-identical files. It needs only the Python standard library and runs in a few seconds. It also prints row counts, planted-issue totals, and the date range.
 
 ### Step 2: Load bronze
 
